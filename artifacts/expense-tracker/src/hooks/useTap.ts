@@ -21,10 +21,8 @@ export function useTap(handler: () => void, options?: UseTapOptions) {
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (stopPropRef.current) e.stopPropagation();
-    if (preventDefaultRef.current) {
-      e.preventDefault();
-      (e.target as Element).setPointerCapture?.(e.pointerId);
-    }
+    if (preventDefaultRef.current) e.preventDefault();
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
     startRef.current = { x: e.clientX, y: e.clientY };
     movedRef.current = false;
   }, []);
