@@ -41,6 +41,8 @@ export function SettingsPage() {
   const [accountForm, setAccountForm] = useState<AccountFormData>({ name: '', type: 'cash' });
   const [accountNameError, setAccountNameError] = useState(false);
   const [accountDupError, setAccountDupError] = useState(false);
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState<Account | null>(null);
+  const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
 
   useEffect(() => {
     setBudgetInput(String(settings.monthly_budget));
@@ -123,6 +125,17 @@ export function SettingsPage() {
     setAccountDupError(false);
   };
 
+  const handleConfirmDeleteAccount = async () => {
+    if (!confirmDeleteAccount) return;
+    setDeletingAccountId(confirmDeleteAccount.id);
+    try {
+      await deleteAccount(confirmDeleteAccount.id);
+    } finally {
+      setConfirmDeleteAccount(null);
+      setDeletingAccountId(null);
+    }
+  };
+
   if (loading) {
     return <GenericPageSkeleton />;
   }
@@ -193,8 +206,12 @@ export function SettingsPage() {
                     <Pencil size={14} />
                   </button>
                   <button
-                    onClick={() => deleteAccount(acc.id)}
-                    className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg"
+                    onClick={() => accounts.length > 1 ? setConfirmDeleteAccount(acc) : undefined}
+                    disabled={accounts.length <= 1 || deletingAccountId === acc.id}
+                    className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-opacity ${
+                      accounts.length <= 1 ? 'text-[#333333] cursor-not-allowed opacity-40' : 'text-[#6B6B6B]'
+                    }`}
+                    title={accounts.length <= 1 ? 'Cannot delete the last account' : 'Delete account'}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -328,6 +345,39 @@ export function SettingsPage() {
           onSave={editingAccount ? handleUpdateAccount : handleAddAccount}
           onClose={closeAccountModal}
         />
+      )}
+
+      {/* Delete Account Confirmation */}
+      {confirmDeleteAccount && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
+          <div className="absolute inset-0 bg-black/70 animate-fade-overlay" onClick={() => setConfirmDeleteAccount(null)} />
+          <div className="relative bg-[#1A1A1A] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-scale-in">
+            <h3 className="text-base font-semibold text-white mb-2">Delete Account?</h3>
+            <p className="text-sm text-[#A0A0A0] mb-6">
+              Delete <span className="text-white font-medium">{confirmDeleteAccount.name}</span>?
+              {confirmDeleteAccount.balance !== 0 && (
+                <span className="block mt-1 text-amber-400 text-xs">
+                  This account has a balance of {formatCurrency(confirmDeleteAccount.balance, settings.currency)}. Deleting it will remove this balance.
+                </span>
+              )}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDeleteAccount(null)}
+                className="flex-1 py-3 rounded-xl text-sm font-medium text-[#A0A0A0] bg-white/5"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDeleteAccount}
+                disabled={!!deletingAccountId}
+                className="flex-1 py-3 rounded-xl text-sm font-medium text-white bg-red-500 disabled:opacity-50"
+              >
+                {deletingAccountId ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
