@@ -238,7 +238,7 @@ export function SettingsPage() {
           {categories.map((cat) => (
             <div key={cat.id} className="flex items-center gap-3 py-2.5">
               <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
-              <span className="flex-1 text-sm text-[#A0A0A0]">{cat.name}</span>
+              <span className="flex-1 text-sm text-[#A0A0A0] truncate">{cat.name}</span>
               <div className="flex items-center gap-0.5">
                 <button
                   onClick={() => openEditCategory(cat)}

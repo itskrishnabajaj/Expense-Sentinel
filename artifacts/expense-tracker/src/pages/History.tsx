@@ -1,11 +1,11 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import { Trash2, Pencil, X, Filter, TrendingUp, ArrowLeftRight, AlertCircle, ShoppingBag } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { GenericPageSkeleton } from '../components/Skeleton';
 import { AddExpense } from './AddExpense';
 import { formatCurrency, formatDate } from '../utils/formatters';
-import { Expense, Transaction } from '../database';
+import { Expense, Transaction, Category, Account } from '../database';
 
 const TYPE_FILTERS = [
   { key: 'all', label: 'All' },
@@ -101,6 +101,123 @@ function txAmountLabel(tx: Transaction, currency: string) {
       };
   }
 }
+
+const TxRow = memo(function TxRow({
+  tx,
+  categoryMap,
+  accountMap,
+  currency,
+  deletingId,
+  originalExpense,
+  onEdit,
+  onDelete,
+}: {
+  tx: Transaction;
+  categoryMap: Map<string, Category>;
+  accountMap: Map<string, { name: string; type: string }>;
+  currency: string;
+  deletingId: string | null;
+  originalExpense?: Expense;
+  onEdit: (e: Expense) => void;
+  onDelete: (tx: Transaction) => void;
+}) {
+  const cat = tx.categoryId ? categoryMap.get(tx.categoryId) : undefined;
+  const amtInfo = txAmountLabel(tx, currency);
+  const isExpenseTx = tx.type === 'expense';
+
+  return (
+    <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+      <TxTypeIcon tx={tx} catIcon={cat?.icon} catColor={cat?.color} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-white truncate">{txTitle(tx, cat?.name)}</p>
+        <p className="text-xs text-[#6B6B6B] mt-0.5 truncate">{txSubLabel(tx, accountMap, cat?.name)}</p>
+      </div>
+      <div className="flex items-center gap-0.5 flex-shrink-0">
+        <p className="text-sm font-semibold mr-1 flex-shrink-0" style={{ color: amtInfo.color }}>
+          {amtInfo.label}
+        </p>
+        {isExpenseTx && originalExpense && (
+          <button
+            onClick={() => onEdit(originalExpense)}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg flex-shrink-0"
+            aria-label="Edit expense"
+          >
+            <Pencil size={14} />
+          </button>
+        )}
+        <button
+          onClick={() => onDelete(tx)}
+          disabled={deletingId === tx.id}
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg flex-shrink-0 disabled:opacity-40"
+          aria-label="Delete"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </div>
+  );
+});
+
+const DayGroup = memo(function DayGroup({
+  date,
+  dayTxs,
+  categoryMap,
+  accountMap,
+  expenses,
+  currency,
+  deletingId,
+  onEdit,
+  onDelete,
+}: {
+  date: string;
+  dayTxs: Transaction[];
+  categoryMap: Map<string, Category>;
+  accountMap: Map<string, { name: string; type: string }>;
+  expenses: Expense[];
+  currency: string;
+  deletingId: string | null;
+  onEdit: (e: Expense) => void;
+  onDelete: (tx: Transaction) => void;
+}) {
+  const dayExpenses = dayTxs.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const dayIncome = dayTxs.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-medium text-[#6B6B6B]">{formatDate(date)}</p>
+        <div className="flex items-center gap-2">
+          {dayIncome > 0 && (
+            <p className="text-xs font-medium text-emerald-400">+{formatCurrency(dayIncome, currency)}</p>
+          )}
+          {dayExpenses > 0 && (
+            <p className="text-xs font-medium text-[#A0A0A0]">-{formatCurrency(dayExpenses, currency)}</p>
+          )}
+        </div>
+      </div>
+      <div className="space-y-2">
+        {dayTxs.map((tx) => {
+          const originalExpense = tx.type === 'expense'
+            ? expenses.find((e) => e.id === (tx.expenseId ?? tx.id))
+            : undefined;
+          return (
+            <TxRow
+              key={tx.id}
+              tx={tx}
+              categoryMap={categoryMap}
+              accountMap={accountMap}
+              currency={currency}
+              deletingId={deletingId}
+              originalExpense={originalExpense}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+});
 
 export function History() {
   const {
@@ -273,70 +390,20 @@ export function History() {
         </div>
       ) : (
         <div className="space-y-5">
-          {groupedByDate.map(([date, dayTxs]) => {
-            const dayExpenses = dayTxs.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-            const dayIncome = dayTxs.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-            return (
-              <div key={date}>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-medium text-[#6B6B6B]">{formatDate(date)}</p>
-                  <div className="flex items-center gap-2">
-                    {dayIncome > 0 && (
-                      <p className="text-xs font-medium text-emerald-400">+{formatCurrency(dayIncome, settings.currency)}</p>
-                    )}
-                    {dayExpenses > 0 && (
-                      <p className="text-xs font-medium text-[#A0A0A0]">-{formatCurrency(dayExpenses, settings.currency)}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {dayTxs.map((tx) => {
-                    const cat = tx.categoryId ? categoryMap.get(tx.categoryId) : undefined;
-                    const amtInfo = txAmountLabel(tx, settings.currency);
-                    const isExpenseTx = tx.type === 'expense';
-                    const originalExpense = isExpenseTx
-                      ? expenses.find((e) => e.id === (tx.expenseId ?? tx.id))
-                      : undefined;
-
-                    return (
-                      <div
-                        key={tx.id}
-                        className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
-                      >
-                        <TxTypeIcon tx={tx} catIcon={cat?.icon} catColor={cat?.color} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white truncate">{txTitle(tx, cat?.name)}</p>
-                          <p className="text-xs text-[#6B6B6B] mt-0.5">{txSubLabel(tx, accountMap, cat?.name)}</p>
-                        </div>
-                        <div className="flex items-center gap-0.5 flex-shrink-0">
-                          <p className="text-sm font-semibold mr-1 flex-shrink-0" style={{ color: amtInfo.color }}>
-                            {amtInfo.label}
-                          </p>
-                          {isExpenseTx && originalExpense && (
-                            <button
-                              onClick={() => setEditingExpense(originalExpense)}
-                              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg flex-shrink-0"
-                              aria-label="Edit expense"
-                            >
-                              <Pencil size={14} />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDeleteTransaction(tx)}
-                            disabled={deletingId === tx.id}
-                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg flex-shrink-0 disabled:opacity-40"
-                            aria-label="Delete"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+          {groupedByDate.map(([date, dayTxs]) => (
+            <DayGroup
+              key={date}
+              date={date}
+              dayTxs={dayTxs}
+              categoryMap={categoryMap}
+              accountMap={accountMap}
+              expenses={expenses}
+              currency={settings.currency}
+              deletingId={deletingId}
+              onEdit={setEditingExpense}
+              onDelete={handleDeleteTransaction}
+            />
+          ))}
         </div>
       )}
     </div>
