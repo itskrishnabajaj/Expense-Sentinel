@@ -106,7 +106,7 @@ interface EditExpenseProps {
 }
 
 export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps) {
-  const { addExpense, updateExpense, categories, accounts, settings, updateAccount, addTransaction } = useApp();
+  const { addExpense, updateExpense, categories, accounts, transactions, settings, updateAccount, addTransaction, updateTransaction } = useApp();
   const navigate = useNavigate();
 
   const [amount, setAmount] = useState(editingExpense ? String(editingExpense.amount) : '');
@@ -174,6 +174,26 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           date,
           note: note.trim(),
         });
+
+        const linkedTx = transactions.find(
+          (t) => t.type === 'expense' && (t.expenseId === editingExpense.id || t.id === editingExpense.id)
+        );
+        if (linkedTx) {
+          await updateTransaction(linkedTx.id, {
+            amount: parsed,
+            categoryId,
+            note: note.trim(),
+            date,
+          });
+
+          if (linkedTx.accountId && parsed !== editingExpense.amount) {
+            const acc = accounts.find((a) => a.id === linkedTx.accountId);
+            if (acc) {
+              const balanceDelta = editingExpense.amount - parsed;
+              await updateAccount(linkedTx.accountId, { balance: acc.balance + balanceDelta });
+            }
+          }
+        }
       } else {
         const savedExpense = await addExpense({
           amount: parsed,
@@ -207,7 +227,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
     } finally {
       setSaving(false);
     }
-  }, [amount, categoryId, accountId, date, note, addExpense, updateExpense, editingExpense, navigate, onDone, accounts, updateAccount, addTransaction]);
+  }, [amount, categoryId, accountId, date, note, addExpense, updateExpense, updateTransaction, editingExpense, navigate, onDone, accounts, transactions, updateAccount, addTransaction]);
 
   const isValid = parseFloat(amount) > 0 && !!categoryId;
   const displayAmount = formatAmountRaw(amount, symbol);
