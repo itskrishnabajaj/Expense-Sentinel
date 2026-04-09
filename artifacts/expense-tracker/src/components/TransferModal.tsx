@@ -16,7 +16,8 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
   const [amount, setAmount] = useState('');
   const [fromId, setFromId] = useState(accounts[0]?.id ?? '');
   const [toId, setToId] = useState(accounts[1]?.id ?? accounts[0]?.id ?? '');
-  const [date] = useState(getTodayString());
+  const [note, setNote] = useState('');
+  const [date, setDate] = useState(getTodayString());
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showFromSheet, setShowFromSheet] = useState(false);
@@ -47,26 +48,34 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
   const handleSave = useCallback(async () => {
     const p = parseFloat(amount);
     if (!p || p <= 0 || !fromId || !toId || fromId === toId) return;
-    setValidationError('');
 
-    const from = accounts.find((a) => a.id === fromId);
-    if (from && from.balance < p) {
-      setValidationError(`Insufficient balance in ${from.name} (${formatCurrency(from.balance, settings.currency)})`);
+    const fromAcc = accounts.find((a) => a.id === fromId);
+    const toAcc = accounts.find((a) => a.id === toId);
+
+    if (fromAcc && fromAcc.balance < p) {
+      setValidationError(`Insufficient balance in ${fromAcc.name} (${formatCurrency(fromAcc.balance, settings.currency)})`);
+      return;
     }
 
+    setValidationError('');
     setSaving(true);
     try {
-      const fromAcc = accounts.find((a) => a.id === fromId);
-      const toAcc = accounts.find((a) => a.id === toId);
       if (fromAcc) await updateAccount(fromId, { balance: fromAcc.balance - p });
       if (toAcc) await updateAccount(toId, { balance: toAcc.balance + p });
-      await addTransaction({ type: 'transfer', amount: p, fromAccountId: fromId, toAccountId: toId, date });
+      await addTransaction({
+        type: 'transfer',
+        amount: p,
+        fromAccountId: fromId,
+        toAccountId: toId,
+        note: note.trim(),
+        date,
+      });
       setSuccess(true);
       setTimeout(() => { onCloseClean(); }, 600);
     } finally {
       setSaving(false);
     }
-  }, [amount, fromId, toId, accounts, updateAccount, addTransaction, onCloseClean, settings.currency]);
+  }, [amount, fromId, toId, note, date, accounts, updateAccount, addTransaction, onCloseClean, settings.currency]);
 
   if (success) {
     return (
@@ -148,8 +157,33 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
           <p className="text-xs text-amber-400 text-center">From and To accounts must be different</p>
         )}
         {validationError && (
-          <p className="text-xs text-amber-400 text-center">{validationError}</p>
+          <p className="text-xs text-red-400 text-center">{validationError}</p>
         )}
+
+        <div className="bg-[#111111] border border-white/5 rounded-xl p-3.5">
+          <label className="block text-xs text-[#6B6B6B] mb-1.5">Note (optional)</label>
+          <input
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="What is this transfer for?"
+            className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#444]"
+            maxLength={100}
+            style={{ userSelect: 'text', touchAction: 'auto' }}
+          />
+        </div>
+
+        <div className="bg-[#111111] border border-white/5 rounded-xl p-3.5">
+          <label className="block text-xs text-[#6B6B6B] mb-1.5">Date</label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            max={getTodayString()}
+            className="w-full bg-transparent text-sm text-white outline-none [color-scheme:dark]"
+            style={{ userSelect: 'text', touchAction: 'auto' }}
+          />
+        </div>
       </div>
 
       <div className="px-5 py-4 flex-shrink-0 border-t border-white/5">
