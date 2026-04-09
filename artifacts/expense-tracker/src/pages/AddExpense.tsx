@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronLeft, ChevronDown, Clock, Delete } from 'lucide-react';
+import { Check, ChevronLeft, ChevronDown, Clock, Delete, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
+import { Modal } from '../components/Modal';
 import { getTodayString } from '../utils/formatters';
 import { Expense } from '../database';
 
@@ -45,43 +46,45 @@ function CategorySheet({ categories, currentCategoryId, onConfirm, onClose }: Ca
   const [pending, setPending] = useState(currentCategoryId);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end"
-      onPointerDown={onClose}
-    >
-      <div className="absolute inset-0 bg-black/70 animate-fade-overlay" />
-      <div
-        className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-8 max-h-[80vh] flex flex-col animate-slide-up"
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-5 flex-shrink-0" />
-        <h2 className="text-base font-semibold text-white mb-4 flex-shrink-0">Select Category</h2>
-        <div className="overflow-y-auto scroll-native flex-1 -mx-2">
-          <div className="divide-y divide-white/5">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onPointerDown={(e) => { e.stopPropagation(); setPending(cat.id); }}
-                className={`w-full flex items-center gap-3 py-3.5 px-2 transition-colors active:bg-white/5 ${
-                  pending === cat.id ? 'text-indigo-400' : 'text-white'
-                }`}
-              >
-                <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
-                <span className="flex-1 text-sm text-left">{cat.name}</span>
-                {pending === cat.id && <Check size={16} className="text-indigo-400 flex-shrink-0" />}
-              </button>
-            ))}
-          </div>
-        </div>
+    <Modal onClose={onClose}>
+      <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/5">
+        <h2 className="text-base font-semibold text-white">Select Category</h2>
+        <button
+          onPointerDown={(e) => { e.stopPropagation(); onClose(); }}
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5"
+        >
+          <X size={16} className="text-[#6B6B6B]" />
+        </button>
+      </div>
+
+      <div className="overflow-y-auto flex-1" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onPointerDown={(e) => { e.stopPropagation(); setPending(cat.id); }}
+            className={`w-full flex items-center gap-4 px-6 py-4 transition-colors active:bg-white/5 border-b border-white/5 last:border-0 ${
+              pending === cat.id ? 'bg-indigo-500/8' : ''
+            }`}
+          >
+            <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
+            <span className={`flex-1 text-sm text-left font-medium ${pending === cat.id ? 'text-indigo-400' : 'text-white'}`}>
+              {cat.name}
+            </span>
+            {pending === cat.id && <Check size={16} className="text-indigo-400 flex-shrink-0" />}
+          </button>
+        ))}
+      </div>
+
+      <div className="px-6 py-5 flex-shrink-0 border-t border-white/5">
         <button
           onPointerDown={(e) => { e.stopPropagation(); onConfirm(pending); }}
           disabled={!pending}
-          className="mt-4 flex-shrink-0 w-full py-3.5 bg-indigo-500 active:bg-indigo-600 text-white text-sm font-semibold rounded-xl disabled:opacity-40"
+          className="w-full py-3.5 bg-indigo-500 active:bg-indigo-600 text-white text-sm font-semibold rounded-2xl disabled:opacity-40"
         >
           Confirm
         </button>
       </div>
-    </div>
+    </Modal>
   );
 }
 

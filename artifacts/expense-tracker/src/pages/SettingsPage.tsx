@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
+import { Modal } from '../components/Modal';
 import { GenericPageSkeleton } from '../components/Skeleton';
 import { exportToCSV } from '../utils/export';
 import { Category } from '../database';
@@ -39,12 +40,7 @@ export function SettingsPage() {
     setBudgetInput(String(settings.monthly_budget));
   }, [settings.monthly_budget]);
 
-  useEffect(() => {
-    const main = document.querySelector('main') as HTMLElement | null;
-    const isOpen = showAddCategory || !!editingCategory;
-    if (main) main.style.overflow = isOpen ? 'hidden' : '';
-    return () => { if (main) main.style.overflow = ''; };
-  }, [showAddCategory, editingCategory]);
+  const closeModal = () => { setShowAddCategory(false); setEditingCategory(null); setCategoryNameError(false); };
 
   const handleSaveBudget = async () => {
     const val = parseFloat(budgetInput);
