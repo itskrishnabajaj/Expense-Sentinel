@@ -293,8 +293,7 @@ export function SettingsPage() {
 
             <button
               onClick={editingCategory ? handleUpdateCategory : handleAddCategory}
-              disabled={!categoryForm.name.trim()}
-              className="w-full py-3.5 bg-indigo-500 text-white text-sm font-semibold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full py-3.5 bg-indigo-500 text-white text-sm font-semibold rounded-xl"
             >
               {editingCategory ? 'Update Category' : 'Add Category'}
             </button>
