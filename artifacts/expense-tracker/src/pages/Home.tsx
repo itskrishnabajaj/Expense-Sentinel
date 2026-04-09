@@ -148,7 +148,7 @@ export function Home() {
 
   const topCategories = useMemo(() => {
     const byCategory: Record<string, number> = {};
-    monthExpenses.forEach((e) => {
+    budgetMonthExpenses.forEach((e) => {
       byCategory[e.category] = (byCategory[e.category] || 0) + e.amount;
     });
     return Object.entries(byCategory)
@@ -158,7 +158,7 @@ export function Home() {
         category: categoryMap.get(id) || { id, name: id, icon: '💰', color: '#6B6B6B' },
         amount,
       }));
-  }, [monthExpenses, categoryMap]);
+  }, [budgetMonthExpenses, categoryMap]);
 
   const recentTransactions = transactions.slice(0, 5);
 
