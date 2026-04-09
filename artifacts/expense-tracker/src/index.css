@@ -89,6 +89,7 @@
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
+  touch-action: pan-y;
 }
 
 /* ─── Safe area utilities ─────────────────────────────────────────────── */

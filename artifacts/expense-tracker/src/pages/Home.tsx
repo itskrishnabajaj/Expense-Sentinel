@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -14,10 +14,10 @@ import {
 import { useApp } from '../context/AppContext';
 import { BudgetProgress } from '../components/BudgetProgress';
 import { CategoryIcon } from '../components/CategoryIcon';
+import { AnimatedCurrency } from '../components/AnimatedCurrency';
 import { HomePageSkeleton } from '../components/Skeleton';
 import { formatCurrency, getMonthName } from '../utils/formatters';
-import { useCountUp } from '../hooks/useCountUp';
-import { Transaction } from '../database';
+import { Transaction, Account, Category } from '../database';
 
 const ACCOUNT_TYPE_ICONS: Record<string, string> = { cash: '💵', bank: '🏦', savings: '💰' };
 
@@ -92,6 +92,197 @@ function txLabel(tx: Transaction, accountMap: Map<string, string>, categoryMap: 
   }
 }
 
+const AccountsStrip = memo(function AccountsStrip({
+  accounts,
+  netWorth,
+  currency,
+}: {
+  accounts: Account[];
+  netWorth: number;
+  currency: string;
+}) {
+  return (
+    <div className="-mx-4">
+      <div
+        className="flex gap-3 px-4 overflow-x-auto"
+        style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+      >
+        {accounts.map((acc) => (
+          <div
+            key={acc.id}
+            className="flex-shrink-0 bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 min-w-[140px]"
+            style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.2)' }}
+          >
+            <div className="text-lg mb-2">{ACCOUNT_TYPE_ICONS[acc.type] ?? '💳'}</div>
+            <p className="text-xs text-[#6B6B6B] mb-1 truncate max-w-[120px]">{acc.name}</p>
+            <p className="text-base font-bold text-white">{formatCurrency(acc.balance, currency)}</p>
+          </div>
+        ))}
+        {accounts.length > 1 && (
+          <div
+            className="flex-shrink-0 bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 min-w-[140px] flex flex-col justify-between"
+            style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.2)' }}
+          >
+            <div className="text-lg mb-2">💼</div>
+            <p className="text-xs text-[#6B6B6B] mb-1">Net Worth</p>
+            <p className="text-base font-bold text-white">
+              <AnimatedCurrency value={netWorth} currency={currency} />
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
+const TotalSpentCard = memo(function TotalSpentCard({
+  total,
+  budget,
+  remaining,
+  currency,
+}: {
+  total: number;
+  budget: number;
+  remaining: number;
+  currency: string;
+}) {
+  return (
+    <div className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+      <p className="text-xs text-[#6B6B6B] mb-1">Total spent this month</p>
+      <p className="text-4xl font-bold text-white tracking-tight mb-4">
+        <AnimatedCurrency value={total} currency={currency} />
+      </p>
+      <BudgetProgress spent={total} budget={budget} />
+      <div className="mt-3 flex items-center justify-between text-xs text-[#6B6B6B]">
+        <span>Budget: {formatCurrency(budget, currency)}</span>
+        <span className={remaining >= 0 ? 'text-emerald-400 font-medium' : 'text-red-400 font-medium'}>
+          {remaining >= 0
+            ? `${formatCurrency(remaining, currency)} left`
+            : `${formatCurrency(Math.abs(remaining), currency)} over`}
+        </span>
+      </div>
+    </div>
+  );
+});
+
+const StatsRow = memo(function StatsRow({
+  monthIncome,
+  dailyAvg,
+  currency,
+}: {
+  monthIncome: number;
+  dailyAvg: number;
+  currency: string;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+        <div className="w-8 h-8 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-3">
+          <TrendingUp size={15} className="text-emerald-400" />
+        </div>
+        <p className="text-xs text-[#6B6B6B] mb-1">Income this month</p>
+        <p className="text-lg font-bold text-emerald-400">
+          {formatCurrency(monthIncome, currency)}
+        </p>
+      </div>
+      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+        <div className="w-8 h-8 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-3">
+          <Calendar size={15} className="text-indigo-400" />
+        </div>
+        <p className="text-xs text-[#6B6B6B] mb-1">Daily average</p>
+        <p className="text-lg font-bold text-white">
+          {formatCurrency(dailyAvg, currency)}
+        </p>
+      </div>
+    </div>
+  );
+});
+
+const TopCategoriesCard = memo(function TopCategoriesCard({
+  topCategories,
+  total,
+  currency,
+}: {
+  topCategories: { category: { id: string; name: string; icon: string; color: string }; amount: number }[];
+  total: number;
+  currency: string;
+}) {
+  if (topCategories.length === 0) return null;
+  return (
+    <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold text-white">Top Categories</h2>
+        <Link to="/insights" className="text-xs text-indigo-400 flex items-center gap-1">
+          View all <ArrowRight size={12} />
+        </Link>
+      </div>
+      <div className="space-y-3">
+        {topCategories.map(({ category, amount }) => {
+          const pct = total > 0 ? (amount / total) * 100 : 0;
+          return (
+            <div key={category.id} className="flex items-center gap-3">
+              <CategoryIcon icon={category.icon} color={category.color} size="sm" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-[#A0A0A0] truncate">{category.name}</span>
+                  <span className="text-sm font-medium text-white ml-2 flex-shrink-0">
+                    {formatCurrency(amount, currency)}
+                  </span>
+                </div>
+                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${pct}%`, backgroundColor: category.color }}
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
+const RecentTransactionsCard = memo(function RecentTransactionsCard({
+  transactions,
+  categoryMap,
+  accountMap,
+  currency,
+}: {
+  transactions: Transaction[];
+  categoryMap: Map<string, Category>;
+  accountMap: Map<string, string>;
+  currency: string;
+}) {
+  if (transactions.length === 0) return null;
+  return (
+    <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-semibold text-white">Recent</h2>
+        <Link to="/history" className="text-xs text-indigo-400 flex items-center gap-1">
+          View all <ArrowRight size={12} />
+        </Link>
+      </div>
+      <div className="space-y-3">
+        {transactions.map((tx) => {
+          const cat = tx.categoryId ? categoryMap.get(tx.categoryId) : undefined;
+          return (
+            <div key={tx.id} className="flex items-center gap-3">
+              {txIcon(tx, cat?.icon, cat?.color)}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-white truncate">{txLabel(tx, accountMap, categoryMap)}</p>
+                <p className="text-xs text-[#6B6B6B]">{tx.date}</p>
+              </div>
+              {txAmount(tx, currency)}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
 export function Home() {
   const { expenses, transactions, categories, accounts, settings, loading } = useApp();
 
@@ -134,10 +325,8 @@ export function Home() {
   );
 
   const total = useMemo(() => budgetMonthExpenses.reduce((sum, e) => sum + e.amount, 0), [budgetMonthExpenses]);
-  const animatedTotal = useCountUp(total, 500);
 
   const netWorth = useMemo(() => accounts.reduce((s, a) => s + a.balance, 0), [accounts]);
-  const animatedNetWorth = useCountUp(netWorth, 500);
 
   const budget = settings.monthly_budget;
   const remaining = budget - total;
@@ -160,7 +349,7 @@ export function Home() {
       }));
   }, [budgetMonthExpenses, categoryMap]);
 
-  const recentTransactions = transactions.slice(0, 5);
+  const recentTransactions = useMemo(() => transactions.slice(0, 5), [transactions]);
 
   if (loading) {
     return <HomePageSkeleton />;
@@ -171,7 +360,7 @@ export function Home() {
   return (
     <div className="space-y-5 pb-4">
       {/* Header */}
-      <div className="animate-fade-in">
+      <div>
         <p className="text-xs text-[#6B6B6B] uppercase tracking-widest mb-1">
           {getMonthName(currentMonth)} {currentYear}
         </p>
@@ -180,78 +369,31 @@ export function Home() {
 
       {/* Accounts Strip */}
       {hasAccounts && (
-        <div className="animate-fade-in delay-50 -mx-4">
-          <div
-            className="flex gap-3 px-4 overflow-x-auto"
-            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
-          >
-            {accounts.map((acc) => (
-              <div
-                key={acc.id}
-                className="flex-shrink-0 bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 min-w-[140px]"
-                style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.2)' }}
-              >
-                <div className="text-lg mb-2">{ACCOUNT_TYPE_ICONS[acc.type] ?? '💳'}</div>
-                <p className="text-xs text-[#6B6B6B] mb-1 truncate max-w-[120px]">{acc.name}</p>
-                <p className="text-base font-bold text-white">{formatCurrency(acc.balance, settings.currency)}</p>
-              </div>
-            ))}
-            {accounts.length > 1 && (
-              <div
-                className="flex-shrink-0 bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 min-w-[140px] flex flex-col justify-between"
-                style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.2)' }}
-              >
-                <div className="text-lg mb-2">💼</div>
-                <p className="text-xs text-[#6B6B6B] mb-1">Net Worth</p>
-                <p className="text-base font-bold text-white">{formatCurrency(animatedNetWorth, settings.currency)}</p>
-              </div>
-            )}
-          </div>
-        </div>
+        <AccountsStrip
+          accounts={accounts}
+          netWorth={netWorth}
+          currency={settings.currency}
+        />
       )}
 
       {/* Total Spent Card */}
-      <div className="animate-fade-in delay-50 bg-[#1A1A1A] rounded-2xl p-5 border border-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
-        <p className="text-xs text-[#6B6B6B] mb-1">Total spent this month</p>
-        <p className="text-4xl font-bold text-white tracking-tight mb-4">
-          {formatCurrency(animatedTotal, settings.currency)}
-        </p>
-        <BudgetProgress spent={total} budget={budget} />
-        <div className="mt-3 flex items-center justify-between text-xs text-[#6B6B6B]">
-          <span>Budget: {formatCurrency(budget, settings.currency)}</span>
-          <span className={remaining >= 0 ? 'text-emerald-400 font-medium' : 'text-red-400 font-medium'}>
-            {remaining >= 0
-              ? `${formatCurrency(remaining, settings.currency)} left`
-              : `${formatCurrency(Math.abs(remaining), settings.currency)} over`}
-          </span>
-        </div>
-      </div>
+      <TotalSpentCard
+        total={total}
+        budget={budget}
+        remaining={remaining}
+        currency={settings.currency}
+      />
 
       {/* Stats Row */}
-      <div className="animate-fade-in delay-100 grid grid-cols-2 gap-3">
-        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
-          <div className="w-8 h-8 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-3">
-            <TrendingUp size={15} className="text-emerald-400" />
-          </div>
-          <p className="text-xs text-[#6B6B6B] mb-1">Income this month</p>
-          <p className="text-lg font-bold text-emerald-400">
-            {formatCurrency(monthIncome, settings.currency)}
-          </p>
-        </div>
-        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
-          <div className="w-8 h-8 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-3">
-            <Calendar size={15} className="text-indigo-400" />
-          </div>
-          <p className="text-xs text-[#6B6B6B] mb-1">Daily average</p>
-          <p className="text-lg font-bold text-white">
-            {formatCurrency(dailyAvg, settings.currency)}
-          </p>
-        </div>
-      </div>
+      <StatsRow
+        monthIncome={monthIncome}
+        dailyAvg={dailyAvg}
+        currency={settings.currency}
+      />
 
       {/* Budget Alert */}
       {budget > 0 && budgetPct >= 80 && (
-        <div className={`animate-fade-in delay-150 rounded-2xl p-4 border flex items-start gap-3 ${
+        <div className={`rounded-2xl p-4 border flex items-start gap-3 ${
           budgetPct >= 100
             ? 'bg-red-500/10 border-red-500/20'
             : 'bg-amber-500/10 border-amber-500/20'
@@ -271,71 +413,23 @@ export function Home() {
       )}
 
       {/* Top Categories */}
-      {topCategories.length > 0 && (
-        <div className="animate-fade-in delay-150 bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-white">Top Categories</h2>
-            <Link to="/insights" className="text-xs text-indigo-400 flex items-center gap-1">
-              View all <ArrowRight size={12} />
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {topCategories.map(({ category, amount }) => {
-              const pct = total > 0 ? (amount / total) * 100 : 0;
-              return (
-                <div key={category.id} className="flex items-center gap-3">
-                  <CategoryIcon icon={category.icon} color={category.color} size="sm" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-[#A0A0A0] truncate">{category.name}</span>
-                      <span className="text-sm font-medium text-white ml-2 flex-shrink-0">
-                        {formatCurrency(amount, settings.currency)}
-                      </span>
-                    </div>
-                    <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${pct}%`, backgroundColor: category.color }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <TopCategoriesCard
+        topCategories={topCategories}
+        total={total}
+        currency={settings.currency}
+      />
 
       {/* Recent Transactions */}
-      {recentTransactions.length > 0 && (
-        <div className="animate-fade-in delay-200 bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-white">Recent</h2>
-            <Link to="/history" className="text-xs text-indigo-400 flex items-center gap-1">
-              View all <ArrowRight size={12} />
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {recentTransactions.map((tx) => {
-              const cat = tx.categoryId ? categoryMap.get(tx.categoryId) : undefined;
-              return (
-                <div key={tx.id} className="flex items-center gap-3">
-                  {txIcon(tx, cat?.icon, cat?.color)}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white truncate">{txLabel(tx, accountMap, categoryMap)}</p>
-                    <p className="text-xs text-[#6B6B6B]">{tx.date}</p>
-                  </div>
-                  {txAmount(tx, settings.currency)}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <RecentTransactionsCard
+        transactions={recentTransactions}
+        categoryMap={categoryMap}
+        accountMap={accountMap}
+        currency={settings.currency}
+      />
 
       {/* Empty State */}
       {transactions.length === 0 && expenses.length === 0 && (
-        <div className="animate-fade-in delay-200 flex flex-col items-center justify-center text-center min-h-[40vh]">
+        <div className="flex flex-col items-center justify-center text-center min-h-[40vh]">
           <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Wallet size={28} className="text-indigo-400" />
           </div>

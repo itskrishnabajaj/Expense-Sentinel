@@ -16,32 +16,12 @@ export function Modal({ onClose, children, maxWidth = 'max-w-sm' }: ModalProps) 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const body = document.body;
     const main = document.querySelector('main') as HTMLElement | null;
-
-    const scrollY = window.scrollY;
-
-    const prev = {
-      bodyOverflow: body.style.overflow,
-      bodyPosition: body.style.position,
-      bodyWidth: body.style.width,
-      bodyTop: body.style.top,
-      mainOverflow: main?.style.overflow ?? '',
-    };
-
-    body.style.overflow = 'hidden';
-    body.style.position = 'fixed';
-    body.style.width = '100%';
-    body.style.top = `-${scrollY}px`;
+    const prevOverflow = main?.style.overflow ?? '';
     if (main) main.style.overflow = 'hidden';
 
     return () => {
-      body.style.overflow = prev.bodyOverflow;
-      body.style.position = prev.bodyPosition;
-      body.style.width = prev.bodyWidth;
-      body.style.top = prev.bodyTop;
-      if (main) main.style.overflow = prev.mainOverflow;
-      window.scrollTo(0, scrollY);
+      if (main) main.style.overflow = prevOverflow;
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
