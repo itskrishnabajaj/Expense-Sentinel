@@ -110,7 +110,7 @@ export function Insights() {
 
   const categoryData = useMemo(() => {
     const byCategory: Record<string, number> = {};
-    filteredExpenses.forEach((e) => {
+    filteredBudgetExpenses.forEach((e) => {
       byCategory[e.category] = (byCategory[e.category] || 0) + e.amount;
     });
     return Object.entries(byCategory)
@@ -119,11 +119,11 @@ export function Insights() {
         const cat = categoryMap.get(id) || { id, name: id, icon: '💰', color: '#6B6B6B' };
         return { ...cat, amount, pct: total > 0 ? (amount / total) * 100 : 0 };
       });
-  }, [filteredExpenses, categoryMap, total]);
+  }, [filteredBudgetExpenses, categoryMap, total]);
 
   const dailyData = useMemo(() => {
     const days: Record<string, number> = {};
-    filteredExpenses.forEach((e) => {
+    filteredBudgetExpenses.forEach((e) => {
       days[e.date] = (days[e.date] || 0) + e.amount;
     });
     return Object.entries(days)
@@ -132,7 +132,7 @@ export function Insights() {
         date: new Date(date + 'T00:00:00').toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
         amount,
       }));
-  }, [filteredExpenses]);
+  }, [filteredBudgetExpenses]);
 
   const highestDay = useMemo(() => {
     if (dailyData.length === 0) return null;
@@ -338,7 +338,7 @@ export function Insights() {
                 </div>
               </div>
 
-              {filteredExpenses.length > 0 && (
+              {filteredBudgetExpenses.length > 0 && (
                 <>
                   {categoryData.length > 0 && (
                     <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
