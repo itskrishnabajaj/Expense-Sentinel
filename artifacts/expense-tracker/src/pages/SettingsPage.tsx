@@ -200,8 +200,8 @@ export function SettingsPage() {
       {/* Reset Confirmation */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setShowResetConfirm(false)} />
-          <div className="relative bg-[#1A1A1A] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+          <div className="absolute inset-0 bg-black/70 animate-fade-overlay" onClick={() => setShowResetConfirm(false)} />
+          <div className="relative bg-[#1A1A1A] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-scale-in">
             <h3 className="text-base font-semibold text-white mb-2">Reset All Data?</h3>
             <p className="text-sm text-[#A0A0A0] mb-6">
               This will permanently delete all {expenses.length} expenses, categories, and settings. This cannot be undone.
