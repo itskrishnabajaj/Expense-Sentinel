@@ -160,7 +160,11 @@ export function History() {
     try {
       if (tx.type === 'expense') {
         await deleteExpense(tx.id);
-        await deleteTransaction(tx.id).catch(() => {});
+        try { await deleteTransaction(tx.id); } catch { /* tx record may not exist for legacy expenses */ }
+        if (tx.accountId) {
+          const acc = accounts.find((a) => a.id === tx.accountId);
+          if (acc) await updateAccount(tx.accountId, { balance: acc.balance + tx.amount });
+        }
       } else {
         await deleteTransaction(tx.id);
         if (tx.type === 'income' && tx.accountId) {
