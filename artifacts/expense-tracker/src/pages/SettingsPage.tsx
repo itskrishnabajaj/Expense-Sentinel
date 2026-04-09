@@ -4,25 +4,15 @@ import {
   Trash2,
   Plus,
   Pencil,
-  X,
   Check,
   ChevronRight,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
-import { Modal } from '../components/Modal';
+import { CategoryFormModal, type CategoryFormData } from '../components/CategoryFormModal';
 import { GenericPageSkeleton } from '../components/Skeleton';
 import { exportToCSV } from '../utils/export';
 import { Category } from '../database';
-
-const CATEGORY_ICONS = ['🍽️', '🚗', '🛍️', '🎬', '💊', '⚡', '✈️', '📚', '👤', '💰', '🏠', '🎮', '☕', '🐾', '💪', '🎵', '🌿', '🎨', '💼', '🧴'];
-const CATEGORY_COLORS = ['#F97316', '#3B82F6', '#EC4899', '#8B5CF6', '#10B981', '#F59E0B', '#06B6D4', '#6366F1', '#84CC16', '#6B7280', '#EF4444', '#14B8A6'];
-
-interface CategoryFormData {
-  name: string;
-  icon: string;
-  color: string;
-}
 
 export function SettingsPage() {
   const { settings, categories, loading, updateSetting, addCategory, updateCategory, deleteCategory, clearAll, expenses } = useApp();
@@ -228,77 +218,14 @@ export function SettingsPage() {
 
       {/* Add/Edit Category Modal */}
       {(showAddCategory || editingCategory) && (
-        <div className="fixed inset-0 z-50 flex items-end outline-none" tabIndex={-1}>
-          <div className="absolute inset-0 bg-black/60 animate-fade-overlay" onClick={() => { setShowAddCategory(false); setEditingCategory(null); setCategoryNameError(false); }} />
-          <div className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-10 max-h-[85vh] overflow-y-auto scroll-native overscroll-contain animate-slide-up">
-            <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-6" />
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-semibold text-white">
-                {editingCategory ? 'Edit Category' : 'Add Category'}
-              </h2>
-              <button onClick={() => { setShowAddCategory(false); setEditingCategory(null); setCategoryNameError(false); }}>
-                <X size={18} className="text-[#6B6B6B]" />
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-xs text-[#6B6B6B] mb-2">Name</label>
-              <input
-                type="text"
-                value={categoryForm.name}
-                onChange={(e) => { setCategoryForm((p) => ({ ...p, name: e.target.value })); setCategoryNameError(false); }}
-                placeholder="Category name"
-                className={`w-full bg-[#1A1A1A] border rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-[#444444] ${
-                  categoryNameError ? 'border-red-500/60' : 'border-white/10 focus:border-indigo-500/50'
-                }`}
-                style={{ userSelect: 'text', touchAction: 'auto' }}
-              />
-              {categoryNameError && (
-                <p className="text-xs text-red-400 mt-1.5 ml-1">Name is required</p>
-              )}
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-xs text-[#6B6B6B] mb-2">Icon</label>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORY_ICONS.map((icon) => (
-                  <button
-                    key={icon}
-                    onClick={() => setCategoryForm((p) => ({ ...p, icon }))}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ${
-                      categoryForm.icon === icon ? 'bg-indigo-500/20 ring-1 ring-indigo-500' : 'bg-[#1A1A1A]'
-                    }`}
-                  >
-                    {icon}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-xs text-[#6B6B6B] mb-2">Color</label>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORY_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setCategoryForm((p) => ({ ...p, color }))}
-                    className={`w-8 h-8 rounded-xl transition-all ${
-                      categoryForm.color === color ? 'ring-2 ring-white/40 ring-offset-2 ring-offset-[#111111]' : ''
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <button
-              onClick={editingCategory ? handleUpdateCategory : handleAddCategory}
-              className="w-full py-3.5 bg-indigo-500 text-white text-sm font-semibold rounded-xl"
-            >
-              {editingCategory ? 'Update Category' : 'Add Category'}
-            </button>
-          </div>
-        </div>
+        <CategoryFormModal
+          isEditing={!!editingCategory}
+          form={categoryForm}
+          nameError={categoryNameError}
+          onFormChange={(f) => { setCategoryForm(f); setCategoryNameError(false); }}
+          onSave={editingCategory ? handleUpdateCategory : handleAddCategory}
+          onClose={closeModal}
+        />
       )}
     </div>
   );
