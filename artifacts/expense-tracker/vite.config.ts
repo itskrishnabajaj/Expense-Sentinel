@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
-import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
 const rawPort = process.env.PORT;
 const port = rawPort && !Number.isNaN(Number(rawPort)) && Number(rawPort) > 0
@@ -18,7 +17,6 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    runtimeErrorOverlay(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.png'],
@@ -86,6 +84,7 @@ export default defineConfig({
     }),
     ...(process.env.NODE_ENV !== 'production' && process.env.REPL_ID !== undefined
       ? [
+          await import('@replit/vite-plugin-runtime-error-modal').then((m) => m.default()),
           await import('@replit/vite-plugin-cartographer').then((m) =>
             m.cartographer({ root: path.resolve(import.meta.dirname, '..') }),
           ),
@@ -99,7 +98,7 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname),
   build: {
-    outDir: path.resolve(import.meta.dirname, 'dist/public'),
+    outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
       output: {
