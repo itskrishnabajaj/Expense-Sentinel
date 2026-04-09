@@ -1,10 +1,9 @@
 import { memo } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, PlusCircle, BarChart2, Clock, Settings } from 'lucide-react';
+import { Home, BarChart2, Clock, Settings } from 'lucide-react';
 
 const tabs = [
   { path: '/', icon: Home, label: 'Home', end: true },
-  { path: '/add', icon: PlusCircle, label: 'Add', end: false },
   { path: '/insights', icon: BarChart2, label: 'Insights', end: false },
   { path: '/history', icon: Clock, label: 'History', end: false },
   { path: '/settings', icon: Settings, label: 'Settings', end: false },

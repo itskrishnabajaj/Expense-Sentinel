@@ -33,6 +33,7 @@ export function SettingsPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [categoryForm, setCategoryForm] = useState<CategoryFormData>({ name: '', icon: '💰', color: '#6366F1' });
+  const [categoryNameError, setCategoryNameError] = useState(false);
 
   useEffect(() => {
     setBudgetInput(String(settings.monthly_budget));
@@ -61,21 +62,24 @@ export function SettingsPage() {
   };
 
   const handleAddCategory = async () => {
-    if (!categoryForm.name.trim()) return;
+    if (!categoryForm.name.trim()) { setCategoryNameError(true); return; }
     await addCategory(categoryForm);
     setShowAddCategory(false);
+    setCategoryNameError(false);
     setCategoryForm({ name: '', icon: '💰', color: '#6366F1' });
   };
 
   const handleUpdateCategory = async () => {
-    if (!editingCategory || !categoryForm.name.trim()) return;
+    if (!editingCategory || !categoryForm.name.trim()) { setCategoryNameError(true); return; }
     await updateCategory(editingCategory.id, categoryForm);
     setEditingCategory(null);
+    setCategoryNameError(false);
   };
 
   const openEditCategory = (cat: Category) => {
     setEditingCategory(cat);
     setCategoryForm({ name: cat.name, icon: cat.icon, color: cat.color });
+    setCategoryNameError(false);
   };
 
   if (loading) {
@@ -137,18 +141,18 @@ export function SettingsPage() {
             <div key={cat.id} className="flex items-center gap-3 py-2.5">
               <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
               <span className="flex-1 text-sm text-[#A0A0A0]">{cat.name}</span>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 <button
                   onClick={() => openEditCategory(cat)}
-                  className="p-1.5 text-[#6B6B6B] rounded-lg"
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg"
                 >
-                  <Pencil size={13} />
+                  <Pencil size={14} />
                 </button>
                 <button
                   onClick={() => deleteCategory(cat.id)}
-                  className="p-1.5 text-[#6B6B6B] rounded-lg"
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg"
                 >
-                  <Trash2 size={13} />
+                  <Trash2 size={14} />
                 </button>
               </div>
             </div>
@@ -241,12 +245,17 @@ export function SettingsPage() {
               <input
                 type="text"
                 value={categoryForm.name}
-                onChange={(e) => setCategoryForm((p) => ({ ...p, name: e.target.value }))}
+                onChange={(e) => { setCategoryForm((p) => ({ ...p, name: e.target.value })); setCategoryNameError(false); }}
                 placeholder="Category name"
-                className="w-full bg-[#1A1A1A] border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-[#444444] focus:border-indigo-500/50"
+                className={`w-full bg-[#1A1A1A] border rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-[#444444] ${
+                  categoryNameError ? 'border-red-500/60' : 'border-white/10 focus:border-indigo-500/50'
+                }`}
                 autoFocus
                 style={{ userSelect: 'text', touchAction: 'auto' }}
               />
+              {categoryNameError && (
+                <p className="text-xs text-red-400 mt-1.5 ml-1">Name is required</p>
+              )}
             </div>
 
             <div className="mb-4">

@@ -99,14 +99,14 @@ export function History() {
               <button
                 key={cat.id}
                 onClick={() => { setFilterCategory(cat.id); setShowFilter(false); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all max-w-[140px] ${
                   filterCategory === cat.id
                     ? 'bg-indigo-500 text-white'
                     : 'bg-white/5 text-[#A0A0A0]'
                 }`}
               >
-                <span>{cat.icon}</span>
-                {cat.name}
+                <span className="flex-shrink-0">{cat.icon}</span>
+                <span className="truncate">{cat.name}</span>
               </button>
             ))}
           </div>
@@ -153,24 +153,24 @@ export function History() {
                           </p>
                           <p className="text-xs text-[#6B6B6B] mt-0.5">{cat.name}</p>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-semibold text-white">
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
+                          <p className="text-sm font-semibold text-white mr-1 flex-shrink-0">
                             -{formatCurrency(expense.amount, settings.currency)}
                           </p>
                           <button
                             onClick={() => setEditingExpense(expense)}
-                            className="p-1.5 text-[#6B6B6B] rounded-lg flex-shrink-0"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg flex-shrink-0"
                             aria-label="Edit expense"
                           >
-                            <Pencil size={13} />
+                            <Pencil size={14} />
                           </button>
                           <button
                             onClick={() => handleDelete(expense.id)}
                             disabled={deletingId === expense.id}
-                            className="p-1.5 text-[#6B6B6B] rounded-lg flex-shrink-0 disabled:opacity-40"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg flex-shrink-0 disabled:opacity-40"
                             aria-label="Delete expense"
                           >
-                            <Trash2 size={13} />
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </div>

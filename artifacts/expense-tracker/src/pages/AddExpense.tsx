@@ -34,6 +34,58 @@ function formatAmountDisplay(raw: string, currencySymbol: string): string {
   return `${currencySymbol}${formattedInt}`;
 }
 
+interface CategorySheetProps {
+  categories: { id: string; name: string; icon: string; color: string }[];
+  currentCategoryId: string;
+  onConfirm: (id: string) => void;
+  onClose: () => void;
+}
+
+function CategorySheet({ categories, currentCategoryId, onConfirm, onClose }: CategorySheetProps) {
+  const [pending, setPending] = useState(currentCategoryId);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end"
+      onPointerDown={onClose}
+    >
+      <div className="absolute inset-0 bg-black/70" />
+      <div
+        className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-8 max-h-[80vh] flex flex-col"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-5 flex-shrink-0" />
+        <h2 className="text-base font-semibold text-white mb-4 flex-shrink-0">Select Category</h2>
+        <div className="overflow-y-auto scroll-native flex-1">
+          <div className="grid grid-cols-3 gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onPointerDown={(e) => { e.stopPropagation(); setPending(cat.id); }}
+                className={`aspect-square flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border transition-all active:opacity-70 ${
+                  pending === cat.id
+                    ? 'border-indigo-500/60 bg-indigo-500/12'
+                    : 'border-white/5 bg-[#1A1A1A]'
+                }`}
+              >
+                <span className="text-2xl leading-none">{cat.icon}</span>
+                <span className="text-[11px] text-white leading-tight truncate w-full text-center">{cat.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <button
+          onPointerDown={(e) => { e.stopPropagation(); onConfirm(pending); }}
+          disabled={!pending}
+          className="mt-4 flex-shrink-0 w-full py-3.5 bg-indigo-500 active:bg-indigo-600 text-white text-sm font-semibold rounded-xl disabled:opacity-40"
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  );
+}
+
 interface EditExpenseProps {
   expense?: Expense;
   onDone?: () => void;
@@ -263,35 +315,12 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
 
       {/* Category Bottom Sheet */}
       {showCategorySheet && (
-        <div
-          className="fixed inset-0 z-50 flex items-end"
-          onPointerDown={() => setShowCategorySheet(false)}
-        >
-          <div className="absolute inset-0 bg-black/70" />
-          <div
-            className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-10 max-h-[80vh] overflow-y-auto scroll-native"
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-6" />
-            <h2 className="text-base font-semibold text-white mb-4">Category</h2>
-            <div className="grid grid-cols-2 gap-2">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onPointerDown={(e) => { e.stopPropagation(); handleSelectCategory(cat.id); }}
-                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all active:opacity-70 ${
-                    categoryId === cat.id
-                      ? 'border-indigo-500/50 bg-indigo-500/10'
-                      : 'border-white/5 bg-[#1A1A1A]'
-                  }`}
-                >
-                  <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
-                  <span className="text-sm text-white">{cat.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <CategorySheet
+          categories={categories}
+          currentCategoryId={categoryId}
+          onConfirm={handleSelectCategory}
+          onClose={() => setShowCategorySheet(false)}
+        />
       )}
     </div>
   );
