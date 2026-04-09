@@ -215,7 +215,7 @@ export function Home() {
 
       {/* Empty State */}
       {expenses.length === 0 && (
-        <div className="animate-fade-in delay-200 text-center py-12">
+        <div className="animate-fade-in delay-200 text-center py-6">
           <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Wallet size={28} className="text-indigo-400" />
           </div>
