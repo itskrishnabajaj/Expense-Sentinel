@@ -6,6 +6,7 @@ import { BudgetProgress } from '../components/BudgetProgress';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { HomePageSkeleton } from '../components/Skeleton';
 import { formatCurrency, getMonthName } from '../utils/formatters';
+import { useCountUp } from '../hooks/useCountUp';
 
 export function Home() {
   const { expenses, categories, settings, loading } = useApp();
@@ -22,6 +23,7 @@ export function Home() {
   }, [expenses, currentMonth, currentYear]);
 
   const total = useMemo(() => monthExpenses.reduce((sum, e) => sum + e.amount, 0), [monthExpenses]);
+  const animatedTotal = useCountUp(total, 500);
 
   const budget = settings.monthly_budget;
   const remaining = budget - total;
@@ -58,7 +60,7 @@ export function Home() {
   return (
     <div className="space-y-5 pb-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between animate-fade-in">
         <div>
           <p className="text-xs text-[#6B6B6B] uppercase tracking-widest mb-1">
             {getMonthName(currentMonth)} {currentYear}
@@ -74,10 +76,10 @@ export function Home() {
       </div>
 
       {/* Total Spent Card */}
-      <div className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+      <div className="animate-fade-in delay-50 bg-[#1A1A1A] rounded-2xl p-5 border border-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
         <p className="text-xs text-[#6B6B6B] mb-1">Total spent this month</p>
         <p className="text-4xl font-bold text-white tracking-tight mb-4">
-          {formatCurrency(total, settings.currency)}
+          {formatCurrency(animatedTotal, settings.currency)}
         </p>
         <BudgetProgress spent={total} budget={budget} />
         <div className="mt-3 flex items-center justify-between text-xs text-[#6B6B6B]">
@@ -91,7 +93,7 @@ export function Home() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="animate-fade-in delay-100 grid grid-cols-2 gap-3">
         <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
           <div className="w-8 h-8 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-3">
             <Wallet size={15} className="text-emerald-400" />
@@ -127,7 +129,7 @@ export function Home() {
 
       {/* Budget Alert */}
       {budget > 0 && budgetPct >= 80 && (
-        <div className={`rounded-2xl p-4 border flex items-start gap-3 ${
+        <div className={`animate-fade-in delay-150 rounded-2xl p-4 border flex items-start gap-3 ${
           budgetPct >= 100
             ? 'bg-red-500/10 border-red-500/20'
             : 'bg-amber-500/10 border-amber-500/20'
@@ -148,7 +150,7 @@ export function Home() {
 
       {/* Top Categories */}
       {topCategories.length > 0 && (
-        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+        <div className="animate-fade-in delay-150 bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-white">Top Categories</h2>
             <Link to="/insights" className="text-xs text-indigo-400 flex items-center gap-1">
@@ -184,7 +186,7 @@ export function Home() {
 
       {/* Recent Expenses */}
       {recentExpenses.length > 0 && (
-        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+        <div className="animate-fade-in delay-200 bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-white">Recent</h2>
             <Link to="/history" className="text-xs text-indigo-400 flex items-center gap-1">
@@ -213,7 +215,7 @@ export function Home() {
 
       {/* Empty State */}
       {expenses.length === 0 && (
-        <div className="text-center py-12">
+        <div className="animate-fade-in delay-200 text-center py-12">
           <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Wallet size={28} className="text-indigo-400" />
           </div>

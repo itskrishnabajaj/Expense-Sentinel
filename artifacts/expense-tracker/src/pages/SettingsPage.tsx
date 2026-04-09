@@ -228,8 +228,8 @@ export function SettingsPage() {
       {/* Add/Edit Category Modal */}
       {(showAddCategory || editingCategory) && (
         <div className="fixed inset-0 z-50 flex items-end">
-          <div className="absolute inset-0 bg-black/60" onClick={() => { setShowAddCategory(false); setEditingCategory(null); setCategoryNameError(false); }} />
-          <div className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-10 max-h-[85vh] overflow-y-auto scroll-native">
+          <div className="absolute inset-0 bg-black/60 animate-fade-overlay" onClick={() => { setShowAddCategory(false); setEditingCategory(null); setCategoryNameError(false); }} />
+          <div className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-10 max-h-[85vh] overflow-y-auto scroll-native animate-slide-up">
             <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-6" />
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-semibold text-white">

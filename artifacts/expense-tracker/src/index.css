@@ -152,6 +152,32 @@
   border-radius: 12px;
 }
 
+/* ─── Bottom sheet slide-up ──────────────────────────────────────────── */
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0.7; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.26s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+/* ─── Backdrop fade ──────────────────────────────────────────────────── */
+@keyframes fade-overlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-overlay {
+  animation: fade-overlay 0.2s ease both;
+}
+
+/* ─── Stagger delay utilities ────────────────────────────────────────── */
+.delay-50  { animation-delay: 50ms;  }
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+
 /* ─── Button press micro-interaction ────────────────────────────────── */
 button:not(:disabled):active {
   transform: scale(0.96);

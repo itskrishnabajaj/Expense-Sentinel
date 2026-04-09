@@ -49,9 +49,9 @@ function CategorySheet({ categories, currentCategoryId, onConfirm, onClose }: Ca
       className="fixed inset-0 z-50 flex items-end"
       onPointerDown={onClose}
     >
-      <div className="absolute inset-0 bg-black/70" />
+      <div className="absolute inset-0 bg-black/70 animate-fade-overlay" />
       <div
-        className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-8 max-h-[80vh] flex flex-col"
+        className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-8 max-h-[80vh] flex flex-col animate-slide-up"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-5 flex-shrink-0" />
