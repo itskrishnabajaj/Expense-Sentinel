@@ -115,6 +115,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? '');
   const [date, setDate] = useState(editingExpense?.date || getTodayString());
   const [note, setNote] = useState(editingExpense?.note || '');
+  const [countInBudget, setCountInBudget] = useState<boolean>(editingExpense?.countInBudget !== false);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showCategorySheet, setShowCategorySheet] = useState(false);
@@ -174,6 +175,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           category: categoryId,
           date,
           note: note.trim(),
+          countInBudget,
         });
 
         const linkedTx = transactions.find(
@@ -201,6 +203,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           category: categoryId,
           date,
           note: note.trim(),
+          countInBudget,
         });
         saveRecentCategory(categoryId);
 
@@ -228,7 +231,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
     } finally {
       setSaving(false);
     }
-  }, [amount, categoryId, accountId, date, note, addExpense, updateExpense, updateTransaction, editingExpense, navigate, onDone, accounts, transactions, updateAccount, addTransaction]);
+  }, [amount, categoryId, accountId, date, note, countInBudget, addExpense, updateExpense, updateTransaction, editingExpense, navigate, onDone, accounts, transactions, updateAccount, addTransaction]);
 
   const isValid = parseFloat(amount) > 0 && !!categoryId;
   const displayAmount = formatAmountRaw(amount, symbol);
@@ -330,6 +333,25 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
         </div>
         <ChevronDown size={16} className="text-[#6B6B6B]" />
       </TapButton>
+
+      {/* Count towards budget toggle */}
+      <div className="bg-[#1A1A1A] border border-white/5 rounded-2xl p-4 flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-white">Count towards budget</p>
+          <p className="text-xs text-[#6B6B6B] mt-0.5">Include in monthly spending total</p>
+        </div>
+        <TapButton
+          onTap={() => setCountInBudget((prev) => !prev)}
+          className={`relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 ${
+            countInBudget ? 'bg-indigo-500' : 'bg-[#333333]'
+          }`}
+          aria-label="Toggle count towards budget"
+        >
+          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${
+            countInBudget ? 'translate-x-5' : 'translate-x-0'
+          }`} />
+        </TapButton>
+      </div>
 
       {/* Account Selector (for new expenses only) */}
       {!editingExpense && accounts.length > 0 && (

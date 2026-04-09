@@ -128,7 +128,12 @@ export function Home() {
     [monthTransactions]
   );
 
-  const total = useMemo(() => monthExpenses.reduce((sum, e) => sum + e.amount, 0), [monthExpenses]);
+  const budgetMonthExpenses = useMemo(
+    () => monthExpenses.filter((e) => e.countInBudget !== false),
+    [monthExpenses]
+  );
+
+  const total = useMemo(() => budgetMonthExpenses.reduce((sum, e) => sum + e.amount, 0), [budgetMonthExpenses]);
   const animatedTotal = useCountUp(total, 500);
 
   const netWorth = useMemo(() => accounts.reduce((s, a) => s + a.balance, 0), [accounts]);
@@ -139,7 +144,7 @@ export function Home() {
   const budgetPct = budget > 0 ? Math.min((total / budget) * 100, 100) : 0;
 
   const daysPassed = Math.max(now.getDate(), 1);
-  const dailyAvg = monthExpenses.length > 0 ? total / daysPassed : 0;
+  const dailyAvg = budgetMonthExpenses.length > 0 ? total / daysPassed : 0;
 
   const topCategories = useMemo(() => {
     const byCategory: Record<string, number> = {};

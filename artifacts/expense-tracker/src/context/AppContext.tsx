@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, ReactNode, useState, useEffect, useCallback, useMemo } from 'react';
 import { Expense, Category, Account, Transaction } from '../database';
 import { getExpenses, addExpense, updateExpense, deleteExpense } from '../database/expenses';
 import { getCategories, addCategory, updateCategory, deleteCategory } from '../database/categories';
@@ -172,31 +172,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await loadAll();
   }, [loadAll]);
 
+  const contextValue = useMemo(() => ({
+    expenses,
+    categories,
+    settings,
+    accounts,
+    transactions,
+    loading,
+    dbUnavailable,
+    addExpense: handleAddExpense,
+    updateExpense: handleUpdateExpense,
+    deleteExpense: handleDeleteExpense,
+    addCategory: handleAddCategory,
+    updateCategory: handleUpdateCategory,
+    deleteCategory: handleDeleteCategory,
+    updateSetting: handleUpdateSetting,
+    addAccount: handleAddAccount,
+    updateAccount: handleUpdateAccount,
+    deleteAccount: handleDeleteAccount,
+    addTransaction: handleAddTransaction,
+    updateTransaction: handleUpdateTransaction,
+    deleteTransaction: handleDeleteTransaction,
+    clearAll: handleClearAll,
+    refresh: loadAll,
+  }), [
+    expenses, categories, settings, accounts, transactions, loading, dbUnavailable,
+    handleAddExpense, handleUpdateExpense, handleDeleteExpense,
+    handleAddCategory, handleUpdateCategory, handleDeleteCategory,
+    handleUpdateSetting,
+    handleAddAccount, handleUpdateAccount, handleDeleteAccount,
+    handleAddTransaction, handleUpdateTransaction, handleDeleteTransaction,
+    handleClearAll, loadAll,
+  ]);
+
   return (
-    <AppContext.Provider value={{
-      expenses,
-      categories,
-      settings,
-      accounts,
-      transactions,
-      loading,
-      dbUnavailable,
-      addExpense: handleAddExpense,
-      updateExpense: handleUpdateExpense,
-      deleteExpense: handleDeleteExpense,
-      addCategory: handleAddCategory,
-      updateCategory: handleUpdateCategory,
-      deleteCategory: handleDeleteCategory,
-      updateSetting: handleUpdateSetting,
-      addAccount: handleAddAccount,
-      updateAccount: handleUpdateAccount,
-      deleteAccount: handleDeleteAccount,
-      addTransaction: handleAddTransaction,
-      updateTransaction: handleUpdateTransaction,
-      deleteTransaction: handleDeleteTransaction,
-      clearAll: handleClearAll,
-      refresh: loadAll,
-    }}>
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );

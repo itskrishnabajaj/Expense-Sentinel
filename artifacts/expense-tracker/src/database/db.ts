@@ -7,6 +7,7 @@ export interface Expense {
   date: string;
   note: string;
   createdAt: number;
+  countInBudget?: boolean;
 }
 
 export interface Category {

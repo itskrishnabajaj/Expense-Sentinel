@@ -91,17 +91,22 @@ export function Insights() {
   const filteredExpenses = view === 'week' ? thisWeekExpenses : thisMonthExpenses;
   const filteredTransactions = view === 'week' ? thisWeekTransactions : thisMonthTransactions;
 
-  const total = useMemo(() => filteredExpenses.reduce((sum, e) => sum + e.amount, 0), [filteredExpenses]);
+  const filteredBudgetExpenses = useMemo(
+    () => filteredExpenses.filter((e) => e.countInBudget !== false),
+    [filteredExpenses]
+  );
+
+  const total = useMemo(() => filteredBudgetExpenses.reduce((sum, e) => sum + e.amount, 0), [filteredBudgetExpenses]);
   const incomeTotal = useMemo(
     () => filteredTransactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0),
     [filteredTransactions]
   );
   const netFlow = incomeTotal - total;
 
-  const thisMonthTotal = useMemo(() => thisMonthExpenses.reduce((sum, e) => sum + e.amount, 0), [thisMonthExpenses]);
-  const lastMonthTotal = useMemo(() => lastMonthExpenses.reduce((sum, e) => sum + e.amount, 0), [lastMonthExpenses]);
-  const thisWeekTotal = useMemo(() => thisWeekExpenses.reduce((sum, e) => sum + e.amount, 0), [thisWeekExpenses]);
-  const lastWeekTotal = useMemo(() => lastWeekExpenses.reduce((sum, e) => sum + e.amount, 0), [lastWeekExpenses]);
+  const thisMonthTotal = useMemo(() => thisMonthExpenses.filter((e) => e.countInBudget !== false).reduce((sum, e) => sum + e.amount, 0), [thisMonthExpenses]);
+  const lastMonthTotal = useMemo(() => lastMonthExpenses.filter((e) => e.countInBudget !== false).reduce((sum, e) => sum + e.amount, 0), [lastMonthExpenses]);
+  const thisWeekTotal = useMemo(() => thisWeekExpenses.filter((e) => e.countInBudget !== false).reduce((sum, e) => sum + e.amount, 0), [thisWeekExpenses]);
+  const lastWeekTotal = useMemo(() => lastWeekExpenses.filter((e) => e.countInBudget !== false).reduce((sum, e) => sum + e.amount, 0), [lastWeekExpenses]);
 
   const categoryData = useMemo(() => {
     const byCategory: Record<string, number> = {};

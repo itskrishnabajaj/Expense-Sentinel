@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { BottomNav } from './components/BottomNav';
 import { InstallPrompt } from './components/InstallPrompt';
@@ -24,7 +24,6 @@ function DBErrorScreen() {
 }
 
 function AnimatedRoutes() {
-  const location = useLocation();
   const { dbUnavailable } = useApp();
 
   if (dbUnavailable) {
@@ -41,20 +40,18 @@ function AnimatedRoutes() {
     <div className="h-full bg-[#0D0D0D] text-white flex flex-col">
       <main className="flex-1 scroll-native safe-area-top">
         <div className="max-w-lg mx-auto px-4 pt-8 pb-32 min-h-full">
-          <div key={location.pathname} className="animate-fade-in">
-            <Routes location={location}>
-              <Route path="/" element={<Home />} />
-              <Route path="/add" element={<AddExpense />} />
-              <Route path="/insights" element={<Insights />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="*" element={
-                <div className="flex items-center justify-center h-64 text-[#6B6B6B]">
-                  Page not found
-                </div>
-              } />
-            </Routes>
-          </div>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/add" element={<AddExpense />} />
+            <Route path="/insights" element={<Insights />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="*" element={
+              <div className="flex items-center justify-center h-64 text-[#6B6B6B]">
+                Page not found
+              </div>
+            } />
+          </Routes>
         </div>
       </main>
       <FAB />
