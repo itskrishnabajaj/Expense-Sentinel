@@ -175,7 +175,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           note: note.trim(),
         });
       } else {
-        await addExpense({
+        const savedExpense = await addExpense({
           amount: parsed,
           category: categoryId,
           date,
@@ -195,6 +195,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
             categoryId,
             note: note.trim(),
             date,
+            expenseId: savedExpense.id,
           });
         }
       }

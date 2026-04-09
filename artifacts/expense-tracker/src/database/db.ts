@@ -45,6 +45,7 @@ export interface Transaction {
   date: string;
   debtType?: 'taken' | 'given';
   isOld?: boolean;
+  expenseId?: string;
   createdAt: number;
 }
 

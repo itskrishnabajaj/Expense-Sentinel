@@ -159,7 +159,8 @@ export function History() {
     setDeletingId(tx.id);
     try {
       if (tx.type === 'expense') {
-        await deleteExpense(tx.id);
+        const expId = tx.expenseId ?? tx.id;
+        await deleteExpense(expId);
         try { await deleteTransaction(tx.id); } catch { /* tx record may not exist for legacy expenses */ }
         if (tx.accountId) {
           const acc = accounts.find((a) => a.id === tx.accountId);
@@ -293,7 +294,9 @@ export function History() {
                     const cat = tx.categoryId ? categoryMap.get(tx.categoryId) : undefined;
                     const amtInfo = txAmountLabel(tx, settings.currency);
                     const isExpenseTx = tx.type === 'expense';
-                    const originalExpense = isExpenseTx ? expenses.find((e) => e.id === tx.id) : undefined;
+                    const originalExpense = isExpenseTx
+                      ? expenses.find((e) => e.id === (tx.expenseId ?? tx.id))
+                      : undefined;
 
                     return (
                       <div
