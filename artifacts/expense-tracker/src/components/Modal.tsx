@@ -12,12 +12,27 @@ export function Modal({ onClose, children, maxWidth = 'max-w-sm' }: ModalProps) 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    const body = document.body;
     const main = document.querySelector('main') as HTMLElement | null;
-    const prevOverflow = main?.style.overflow ?? '';
+
+    const prevBodyOverflow = body.style.overflow;
+    const prevBodyPosition = body.style.position;
+    const prevBodyWidth = body.style.width;
+    const scrollY = window.scrollY;
+
+    const prevMainOverflow = main?.style.overflow ?? '';
+
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.width = '100%';
     if (main) main.style.overflow = 'hidden';
 
     return () => {
-      if (main) main.style.overflow = prevOverflow;
+      body.style.overflow = prevBodyOverflow;
+      body.style.position = prevBodyPosition;
+      body.style.width = prevBodyWidth;
+      if (main) main.style.overflow = prevMainOverflow;
+      window.scrollTo(0, scrollY);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
