@@ -97,11 +97,22 @@ export function Home() {
             <Wallet size={15} className="text-emerald-400" />
           </div>
           <p className="text-xs text-[#6B6B6B] mb-1">Remaining</p>
-          <p className={`text-lg font-bold ${remaining >= 0 ? 'text-white' : 'text-red-400'}`}>
-            {budget > 0
-              ? formatCurrency(Math.max(remaining, 0), settings.currency)
-              : '—'}
-          </p>
+          {budget > 0 ? (
+            remaining >= 0 ? (
+              <p className="text-lg font-bold text-white">
+                {formatCurrency(remaining, settings.currency)}
+              </p>
+            ) : (
+              <div>
+                <p className="text-lg font-bold text-red-400">
+                  -{formatCurrency(Math.abs(remaining), settings.currency)}
+                </p>
+                <p className="text-[10px] text-red-400/70 mt-0.5">over budget</p>
+              </div>
+            )
+          ) : (
+            <p className="text-lg font-bold text-[#6B6B6B]">—</p>
+          )}
         </div>
         <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
           <div className="w-8 h-8 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-3">
