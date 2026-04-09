@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTap } from '../hooks/useTap';
 
 const ModalCloseCtx = createContext<() => void>(() => {});
 export const useModalClose = () => useContext(ModalCloseCtx);
@@ -51,6 +52,8 @@ export function Modal({ onClose, children, maxWidth = 'max-w-sm' }: ModalProps) 
     timerRef.current = setTimeout(onClose, 180);
   };
 
+  const backdropTap = useTap(requestClose);
+
   return createPortal(
     <ModalCloseCtx.Provider value={requestClose}>
       <div
@@ -69,7 +72,7 @@ export function Modal({ onClose, children, maxWidth = 'max-w-sm' }: ModalProps) 
           outline: 'none',
           border: 'none',
         } as React.CSSProperties}
-        onPointerDown={requestClose}
+        {...backdropTap}
       >
         <div
           className={closing ? 'modal-card modal-card--out' : 'modal-card modal-card--in'}
@@ -87,6 +90,9 @@ export function Modal({ onClose, children, maxWidth = 'max-w-sm' }: ModalProps) 
             border: 'none',
           }}
           onPointerDown={(e) => e.stopPropagation()}
+          onPointerMove={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+          onPointerCancel={(e) => e.stopPropagation()}
         >
           {children}
         </div>

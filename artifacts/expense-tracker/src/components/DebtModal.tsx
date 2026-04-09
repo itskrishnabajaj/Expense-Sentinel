@@ -87,7 +87,7 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
     <>
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/5">
         <h2 className="text-base font-semibold text-white">Record Debt</h2>
-        <button onPointerDown={(e) => { e.stopPropagation(); close(); }} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5">
+        <button onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5">
           <X size={16} className="text-[#6B6B6B]" />
         </button>
       </div>
@@ -97,7 +97,7 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
           {(['taken', 'given'] as const).map((t) => (
             <button
               key={t}
-              onPointerDown={(e) => { e.stopPropagation(); setDebtType(t); }}
+              onClick={() => setDebtType(t)}
               className={`py-3 rounded-xl text-sm font-semibold border transition-all ${
                 debtType === t
                   ? t === 'taken'
@@ -126,7 +126,7 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
           {NUMPAD_KEYS.map((key) => (
             <button
               key={key}
-              onPointerDown={(e) => { e.preventDefault(); handleNumKey(key); }}
+              onClick={() => handleNumKey(key)}
               className="h-12 bg-[#111111] active:bg-[#1E1E1E] rounded-xl flex items-center justify-center border border-white/5"
             >
               {key === 'backspace' ? <Delete size={16} className="text-[#A0A0A0]" /> : <span className="text-base font-medium text-white">{key}</span>}
@@ -135,7 +135,7 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
         </div>
 
         <button
-          onPointerDown={(e) => { e.preventDefault(); setShowAccountSheet(true); }}
+          onClick={() => setShowAccountSheet(true)}
           className="w-full bg-[#111111] border border-white/5 rounded-xl p-3.5 flex items-center gap-3 active:bg-[#1A1A1A]"
         >
           <span className="text-lg">{TYPE_ICONS[selectedAccount?.type ?? 'cash'] ?? '💳'}</span>
@@ -172,7 +172,7 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
         </div>
 
         <button
-          onPointerDown={(e) => { e.stopPropagation(); setIsOld(!isOld); }}
+          onClick={() => setIsOld(!isOld)}
           className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${
             isOld ? 'bg-amber-500/10 border-amber-500/30' : 'bg-[#111111] border-white/5'
           }`}
@@ -182,7 +182,7 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
             <p className="text-xs text-[#6B6B6B]">Does not affect account balance</p>
           </div>
           <div className={`w-10 h-5.5 rounded-full transition-all relative ${isOld ? 'bg-amber-500' : 'bg-[#333]'}`} style={{ minWidth: 40, height: 22 }}>
-            <div className={`absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white transition-all`} style={{ width: 18, height: 18, top: 2, left: isOld ? 20 : 2, transition: 'left 0.15s ease' }} />
+            <div className="absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white transition-all" style={{ width: 18, height: 18, top: 2, left: isOld ? 20 : 2, transition: 'left 0.15s ease' }} />
           </div>
         </button>
       </div>

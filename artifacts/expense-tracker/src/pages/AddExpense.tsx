@@ -50,7 +50,7 @@ function CategorySheetInner({
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/5">
         <h2 className="text-base font-semibold text-white">Select Category</h2>
         <button
-          onPointerDown={(e) => { e.stopPropagation(); close(); }}
+          onClick={close}
           className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5"
         >
           <X size={16} className="text-[#6B6B6B]" />
@@ -61,7 +61,7 @@ function CategorySheetInner({
         {categories.map((cat) => (
           <button
             key={cat.id}
-            onPointerDown={(e) => { e.stopPropagation(); setPending(cat.id); }}
+            onClick={() => setPending(cat.id)}
             className={`w-full flex items-center gap-4 px-6 py-4 transition-colors active:bg-white/5 border-b border-white/5 last:border-0 ${
               pending === cat.id ? 'bg-indigo-500/10' : ''
             }`}
@@ -77,7 +77,7 @@ function CategorySheetInner({
 
       <div className="px-6 py-5 flex-shrink-0 border-t border-white/5">
         <button
-          onPointerDown={(e) => { e.stopPropagation(); onConfirm(pending); }}
+          onClick={() => onConfirm(pending)}
           disabled={!pending}
           className="w-full py-3.5 bg-indigo-500 active:bg-indigo-600 text-white text-sm font-semibold rounded-2xl disabled:opacity-40"
         >
@@ -276,10 +276,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
         {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'backspace'].map((key) => (
           <button
             key={key}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              handleNumKey(key);
-            }}
+            onClick={() => handleNumKey(key)}
             className="h-14 bg-[#1A1A1A] active:bg-[#252525] rounded-2xl flex items-center justify-center border border-white/5"
           >
             {key === 'backspace' ? (
@@ -302,7 +299,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
             {recentCategories.map((cat) => (
               <button
                 key={cat.id}
-                onPointerDown={(e) => { e.preventDefault(); handleSelectCategory(cat.id); }}
+                onClick={() => handleSelectCategory(cat.id)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${
                   categoryId === cat.id
                     ? 'border-indigo-500/50 bg-indigo-500/10'
@@ -319,7 +316,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
 
       {/* Category Selector */}
       <button
-        onPointerDown={(e) => { e.preventDefault(); setShowCategorySheet(true); }}
+        onClick={() => setShowCategorySheet(true)}
         className="w-full bg-[#1A1A1A] border border-white/5 rounded-2xl p-4 flex items-center gap-3 active:bg-[#222222] transition-colors"
       >
         {selectedCategory && (
@@ -335,7 +332,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
       {/* Account Selector (for new expenses only) */}
       {!editingExpense && accounts.length > 0 && (
         <button
-          onPointerDown={(e) => { e.preventDefault(); setShowAccountSheet(true); }}
+          onClick={() => setShowAccountSheet(true)}
           className="w-full bg-[#1A1A1A] border border-white/5 rounded-2xl p-4 flex items-center gap-3 active:bg-[#222222] transition-colors"
         >
           <span className="text-xl">{TYPE_ICONS[selectedAccount?.type ?? 'cash'] ?? '💳'}</span>

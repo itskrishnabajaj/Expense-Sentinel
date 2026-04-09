@@ -92,7 +92,7 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
     <>
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/5">
         <h2 className="text-base font-semibold text-white">Transfer</h2>
-        <button onPointerDown={(e) => { e.stopPropagation(); close(); }} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5">
+        <button onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5">
           <X size={16} className="text-[#6B6B6B]" />
         </button>
       </div>
@@ -113,7 +113,7 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
           {NUMPAD_KEYS.map((key) => (
             <button
               key={key}
-              onPointerDown={(e) => { e.preventDefault(); handleNumKey(key); }}
+              onClick={() => handleNumKey(key)}
               className="h-12 bg-[#111111] active:bg-[#1E1E1E] rounded-xl flex items-center justify-center border border-white/5"
             >
               {key === 'backspace' ? <Delete size={16} className="text-[#A0A0A0]" /> : <span className="text-base font-medium text-white">{key}</span>}
@@ -123,7 +123,7 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
 
         <div className="space-y-1">
           <button
-            onPointerDown={(e) => { e.preventDefault(); setShowFromSheet(true); }}
+            onClick={() => setShowFromSheet(true)}
             className="w-full bg-[#111111] border border-white/5 rounded-xl p-3.5 flex items-center gap-3 active:bg-[#1A1A1A]"
           >
             <span className="text-lg">{TYPE_ICONS[fromAccount?.type ?? 'cash'] ?? '💳'}</span>
@@ -141,7 +141,7 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
           </div>
 
           <button
-            onPointerDown={(e) => { e.preventDefault(); setShowToSheet(true); }}
+            onClick={() => setShowToSheet(true)}
             className="w-full bg-[#111111] border border-white/5 rounded-xl p-3.5 flex items-center gap-3 active:bg-[#1A1A1A]"
           >
             <span className="text-lg">{TYPE_ICONS[toAccount?.type ?? 'cash'] ?? '💳'}</span>

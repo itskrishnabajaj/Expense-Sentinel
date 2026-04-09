@@ -31,7 +31,7 @@ function AccountSheetInner({
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/5">
         <h2 className="text-base font-semibold text-white">{title}</h2>
         <button
-          onPointerDown={(e) => { e.stopPropagation(); close(); }}
+          onClick={close}
           className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5"
         >
           <X size={16} className="text-[#6B6B6B]" />
@@ -44,7 +44,7 @@ function AccountSheetInner({
           return (
             <button
               key={acc.id}
-              onPointerDown={(e) => { e.stopPropagation(); setPending(acc.id); }}
+              onClick={() => setPending(acc.id)}
               className={`w-full flex items-center gap-4 px-6 py-4 transition-colors active:bg-white/5 border-b border-white/5 last:border-0 ${selected ? 'bg-indigo-500/10' : ''}`}
             >
               <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
@@ -65,7 +65,7 @@ function AccountSheetInner({
 
       <div className="px-6 py-5 flex-shrink-0 border-t border-white/5">
         <button
-          onPointerDown={(e) => { e.stopPropagation(); onConfirm(pending); }}
+          onClick={() => onConfirm(pending)}
           disabled={!pending}
           className="w-full py-3.5 bg-indigo-500 active:bg-indigo-600 text-white text-sm font-semibold rounded-2xl disabled:opacity-40"
         >

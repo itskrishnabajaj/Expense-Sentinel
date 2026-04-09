@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { IncomeModal } from './IncomeModal';
 import { TransferModal } from './TransferModal';
 import { DebtModal } from './DebtModal';
+import { useTap } from '../hooks/useTap';
 
 type ModalType = 'income' | 'transfer' | 'debt' | null;
 
@@ -44,7 +45,7 @@ function ActionButton({ label, icon, onClick, index, isVisible }: ActionButtonPr
         {label}
       </span>
       <button
-        onPointerDown={(e) => { e.stopPropagation(); onClick(); }}
+        onClick={onClick}
         style={{
           width: 44,
           height: 44,
@@ -71,6 +72,7 @@ export function FAB() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const overlayTap = useTap(() => setOpen(false));
 
   const hiddenPaths = ['/add', '/settings'];
   if (hiddenPaths.some((p) => location.pathname.startsWith(p))) return null;
@@ -98,7 +100,7 @@ export function FAB() {
       {open && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 99 }}
-          onPointerDown={() => setOpen(false)}
+          {...overlayTap}
         />
       )}
 
@@ -126,7 +128,7 @@ export function FAB() {
         ))}
 
         <button
-          onPointerDown={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+          onClick={() => setOpen((v) => !v)}
           style={{
             width: 56,
             height: 56,

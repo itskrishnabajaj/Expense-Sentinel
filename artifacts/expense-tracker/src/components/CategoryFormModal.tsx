@@ -47,7 +47,6 @@ function CategoryFormInner({
 
   return (
     <>
-      {/* Header */}
       <div
         style={{
           display: 'flex',
@@ -62,7 +61,7 @@ function CategoryFormInner({
           {title}
         </h2>
         <button
-          onPointerDown={(e) => { e.stopPropagation(); close(); }}
+          onClick={close}
           style={{
             width: 32,
             height: 32,
@@ -81,7 +80,6 @@ function CategoryFormInner({
         </button>
       </div>
 
-      {/* Scrollable body */}
       <div
         style={{
           flex: 1,
@@ -93,7 +91,6 @@ function CategoryFormInner({
           gap: '20px',
         }}
       >
-        {/* Name field */}
         <div>
           <label
             style={{
@@ -133,7 +130,6 @@ function CategoryFormInner({
           )}
         </div>
 
-        {/* Icon picker */}
         <div>
           <label
             style={{
@@ -151,7 +147,7 @@ function CategoryFormInner({
             {CATEGORY_ICONS.map((icon) => (
               <button
                 key={icon}
-                onPointerDown={(e) => { e.stopPropagation(); onFormChange({ ...form, icon }); }}
+                onClick={() => onFormChange({ ...form, icon })}
                 style={{
                   width: 40,
                   height: 40,
@@ -173,7 +169,6 @@ function CategoryFormInner({
           </div>
         </div>
 
-        {/* Color picker */}
         <div>
           <label
             style={{
@@ -191,7 +186,7 @@ function CategoryFormInner({
             {CATEGORY_COLORS.map((color) => (
               <button
                 key={color}
-                onPointerDown={(e) => { e.stopPropagation(); onFormChange({ ...form, color }); }}
+                onClick={() => onFormChange({ ...form, color })}
                 style={{
                   width: 36,
                   height: 36,
@@ -209,7 +204,6 @@ function CategoryFormInner({
         </div>
       </div>
 
-      {/* Footer / Save button */}
       <div
         style={{
           padding: '16px 24px 24px',
@@ -218,7 +212,7 @@ function CategoryFormInner({
         }}
       >
         <button
-          onPointerDown={(e) => { e.stopPropagation(); onSave(); }}
+          onClick={onSave}
           style={{
             width: '100%',
             padding: '14px',
