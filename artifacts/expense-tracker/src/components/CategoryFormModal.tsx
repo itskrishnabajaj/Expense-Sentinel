@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { Modal } from './Modal';
+import { Modal, useModalClose } from './Modal';
 
 export const CATEGORY_ICONS = [
   '🍽️', '🚗', '🛍️', '🎬', '💊', '⚡', '✈️', '📚',
@@ -28,18 +28,25 @@ interface CategoryFormModalProps {
   onClose: () => void;
 }
 
-export function CategoryFormModal({
-  isEditing,
+function CategoryFormInner({
+  title,
+  saveLabel,
   form,
   nameError,
   onFormChange,
   onSave,
-  onClose,
-}: CategoryFormModalProps) {
-  const title = isEditing ? 'Edit Category' : 'Add Category';
+}: {
+  title: string;
+  saveLabel: string;
+  form: CategoryFormData;
+  nameError: boolean;
+  onFormChange: (form: CategoryFormData) => void;
+  onSave: () => void;
+}) {
+  const close = useModalClose();
 
   return (
-    <Modal onClose={onClose}>
+    <>
       {/* Header */}
       <div
         style={{
@@ -55,7 +62,7 @@ export function CategoryFormModal({
           {title}
         </h2>
         <button
-          onPointerDown={(e) => { e.stopPropagation(); onClose(); }}
+          onPointerDown={(e) => { e.stopPropagation(); close(); }}
           style={{
             width: 32,
             height: 32,
@@ -225,9 +232,34 @@ export function CategoryFormModal({
             cursor: 'pointer',
           }}
         >
-          {title}
+          {saveLabel}
         </button>
       </div>
+    </>
+  );
+}
+
+export function CategoryFormModal({
+  isEditing,
+  form,
+  nameError,
+  onFormChange,
+  onSave,
+  onClose,
+}: CategoryFormModalProps) {
+  const title = isEditing ? 'Edit Category' : 'Add Category';
+  const saveLabel = isEditing ? 'Update Category' : 'Add Category';
+
+  return (
+    <Modal onClose={onClose}>
+      <CategoryFormInner
+        title={title}
+        saveLabel={saveLabel}
+        form={form}
+        nameError={nameError}
+        onFormChange={onFormChange}
+        onSave={onSave}
+      />
     </Modal>
   );
 }

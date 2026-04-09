@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Check, ChevronLeft, ChevronDown, Clock, Delete, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
-import { Modal } from '../components/Modal';
+import { Modal, useModalClose } from '../components/Modal';
 import { getTodayString } from '../utils/formatters';
 import { Expense } from '../database';
 
@@ -42,15 +42,24 @@ interface CategorySheetProps {
   onClose: () => void;
 }
 
-function CategorySheet({ categories, currentCategoryId, onConfirm, onClose }: CategorySheetProps) {
+function CategorySheetInner({
+  categories,
+  currentCategoryId,
+  onConfirm,
+}: {
+  categories: { id: string; name: string; icon: string; color: string }[];
+  currentCategoryId: string;
+  onConfirm: (id: string) => void;
+}) {
   const [pending, setPending] = useState(currentCategoryId);
+  const close = useModalClose();
 
   return (
-    <Modal onClose={onClose}>
+    <>
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/5">
         <h2 className="text-base font-semibold text-white">Select Category</h2>
         <button
-          onPointerDown={(e) => { e.stopPropagation(); onClose(); }}
+          onPointerDown={(e) => { e.stopPropagation(); close(); }}
           className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5"
         >
           <X size={16} className="text-[#6B6B6B]" />
@@ -63,7 +72,7 @@ function CategorySheet({ categories, currentCategoryId, onConfirm, onClose }: Ca
             key={cat.id}
             onPointerDown={(e) => { e.stopPropagation(); setPending(cat.id); }}
             className={`w-full flex items-center gap-4 px-6 py-4 transition-colors active:bg-white/5 border-b border-white/5 last:border-0 ${
-              pending === cat.id ? 'bg-indigo-500/8' : ''
+              pending === cat.id ? 'bg-indigo-500/10' : ''
             }`}
           >
             <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
@@ -84,6 +93,18 @@ function CategorySheet({ categories, currentCategoryId, onConfirm, onClose }: Ca
           Confirm
         </button>
       </div>
+    </>
+  );
+}
+
+function CategorySheet({ categories, currentCategoryId, onConfirm, onClose }: CategorySheetProps) {
+  return (
+    <Modal onClose={onClose}>
+      <CategorySheetInner
+        categories={categories}
+        currentCategoryId={currentCategoryId}
+        onConfirm={onConfirm}
+      />
     </Modal>
   );
 }
