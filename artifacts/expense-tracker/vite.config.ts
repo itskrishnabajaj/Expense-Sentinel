@@ -10,7 +10,8 @@ const port = rawPort && !Number.isNaN(Number(rawPort)) && Number(rawPort) > 0
   ? Number(rawPort)
   : 5173;
 
-const basePath = process.env.BASE_PATH || '/';
+const basePath = (process.env.BASE_PATH || '/').replace(/\/?$/, '/');
+const startUrl = basePath === '/' ? '/' : basePath;
 
 export default defineConfig({
   base: basePath,
@@ -28,9 +29,11 @@ export default defineConfig({
         theme_color: '#0D0D0D',
         background_color: '#0D0D0D',
         display: 'standalone',
+        display_override: ['standalone', 'minimal-ui'],
         orientation: 'portrait',
-        start_url: '/',
-        scope: '/',
+        start_url: startUrl,
+        scope: startUrl,
+        prefer_related_applications: false,
         icons: [
           {
             src: 'icons/icon-192.png',
@@ -62,9 +65,7 @@ export default defineConfig({
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 * 365,
               },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
           {
@@ -76,16 +77,12 @@ export default defineConfig({
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 * 365,
               },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
         ],
       },
-      devOptions: {
-        enabled: false,
-      },
+      devOptions: { enabled: false },
     }),
     ...(process.env.NODE_ENV !== 'production' && process.env.REPL_ID !== undefined
       ? [
@@ -97,24 +94,28 @@ export default defineConfig({
       : []),
   ],
   resolve: {
-    alias: {
-      '@': path.resolve(import.meta.dirname, 'src'),
-    },
+    alias: { '@': path.resolve(import.meta.dirname, 'src') },
     dedupe: ['react', 'react-dom'],
   },
   root: path.resolve(import.meta.dirname),
   build: {
     outDir: path.resolve(import.meta.dirname, 'dist/public'),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          charts: ['recharts'],
+          db: ['idb'],
+        },
+      },
+    },
   },
   server: {
     port,
     host: '0.0.0.0',
     allowedHosts: true,
-    fs: {
-      strict: true,
-      deny: ['**/.*'],
-    },
+    fs: { strict: true, deny: ['**/.*'] },
   },
   preview: {
     port,

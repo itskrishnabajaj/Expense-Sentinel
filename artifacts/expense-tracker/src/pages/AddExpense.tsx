@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Check, ChevronLeft, ChevronDown, Clock, Delete } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
-import { getTodayString, formatCurrency } from '../utils/formatters';
+import { getTodayString } from '../utils/formatters';
 import { Expense } from '../database';
 
 const RECENT_CATS_KEY = 'expense_recent_categories';
@@ -23,6 +23,21 @@ function saveRecentCategory(id: string) {
   localStorage.setItem(RECENT_CATS_KEY, JSON.stringify(recents.slice(0, MAX_RECENT)));
 }
 
+function formatAmountDisplay(raw: string, currencySymbol: string): string {
+  if (!raw) return '';
+  const isDecimalPending = raw.endsWith('.');
+  const num = parseFloat(raw);
+  if (isNaN(num)) return raw;
+  if (isDecimalPending) {
+    return `${currencySymbol}${num.toLocaleString('en-IN')}. `;
+  }
+  const parts = raw.split('.');
+  if (parts[1] !== undefined) {
+    return `${currencySymbol}${parseInt(parts[0], 10).toLocaleString('en-IN')}.${parts[1]}`;
+  }
+  return `${currencySymbol}${num.toLocaleString('en-IN')}`;
+}
+
 interface EditExpenseProps {
   expense?: Expense;
   onDone?: () => void;
@@ -33,7 +48,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
   const navigate = useNavigate();
 
   const [amount, setAmount] = useState(editingExpense ? String(editingExpense.amount) : '');
-  const [categoryId, setCategoryId] = useState(editingExpense?.category || categories[0]?.id || '');
+  const [categoryId, setCategoryId] = useState(editingExpense?.category || '');
   const [date, setDate] = useState(editingExpense?.date || getTodayString());
   const [note, setNote] = useState(editingExpense?.note || '');
   const [saving, setSaving] = useState(false);
@@ -48,32 +63,32 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
   }, [categories, categoryId]);
 
   const selectedCategory = categories.find((c) => c.id === categoryId) || categories[0];
+  const currencySymbol = settings.currency === 'INR' ? '₹' : '$';
 
   const recentCategories = recentCategoryIds
     .map((id) => categories.find((c) => c.id === id))
     .filter(Boolean) as typeof categories;
 
-  const handleNumKey = (key: string) => {
-    if (key === 'backspace') {
-      setAmount((prev) => prev.slice(0, -1));
-    } else if (key === '.' && amount.includes('.')) {
-      return;
-    } else if (key === '.') {
-      setAmount((prev) => (prev === '' ? '0.' : prev + '.'));
-    } else {
-      const next = amount + key;
+  const handleNumKey = useCallback((key: string) => {
+    setAmount((prev) => {
+      if (key === 'backspace') return prev.slice(0, -1);
+      if (key === '.') {
+        if (prev.includes('.')) return prev;
+        return prev === '' ? '0.' : prev + '.';
+      }
+      const next = prev + key;
       const parts = next.split('.');
-      if (parts[1] && parts[1].length > 2) return;
-      if (next.replace('.', '').length > 9) return;
-      setAmount(next);
-    }
-  };
+      if (parts[1] && parts[1].length > 2) return prev;
+      if (next.replace('.', '').length > 9) return prev;
+      return next;
+    });
+  }, []);
 
-  const handleSelectCategory = (id: string) => {
+  const handleSelectCategory = useCallback((id: string) => {
     setCategoryId(id);
     saveRecentCategory(id);
     setShowCategorySheet(false);
-  };
+  }, []);
 
   const handleSave = useCallback(async () => {
     const parsed = parseFloat(amount);
@@ -108,6 +123,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
   }, [amount, categoryId, date, note, addExpense, updateExpense, editingExpense, navigate, onDone]);
 
   const isValid = parseFloat(amount) > 0 && !!categoryId;
+  const displayAmount = formatAmountDisplay(amount, currencySymbol);
 
   if (success) {
     return (
@@ -122,13 +138,8 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
     );
   }
 
-  const displayAmount = amount
-    ? formatCurrency(parseFloat(amount) || 0, settings.currency)
-    : null;
-
   return (
     <div className="space-y-5 pb-4">
-      {/* Header */}
       {!editingExpense && (
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/')} className="p-2 -ml-2 text-[#6B6B6B]">
@@ -141,24 +152,19 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
         <h1 className="text-lg font-bold text-white">Edit Expense</h1>
       )}
 
-      {/* Amount Display — tap here does NOT open keyboard */}
+      {/* Amount Display */}
       <div className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/5 text-center shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
-        <p className="text-xs text-[#6B6B6B] mb-2 uppercase tracking-widest">Amount</p>
-        <div className="text-5xl font-bold text-white tracking-tight min-h-[60px] flex items-center justify-center">
+        <p className="text-xs text-[#6B6B6B] mb-3 uppercase tracking-widest">Amount</p>
+        <div className="h-16 flex items-center justify-center">
           {displayAmount ? (
-            <span>{displayAmount}</span>
+            <span className="text-5xl font-bold text-white tracking-tight">{displayAmount}</span>
           ) : (
-            <span className="text-[#2A2A2A]">₹0</span>
+            <span className="text-5xl font-bold text-[#2A2A2A] tracking-tight">{currencySymbol}0</span>
           )}
         </div>
-        {amount && !displayAmount && (
-          <div className="text-5xl font-bold text-white tracking-tight min-h-[60px] flex items-center justify-center">
-            <span className="text-[#6B6B6B] text-2xl">{amount}</span>
-          </div>
-        )}
       </div>
 
-      {/* Custom Numpad — ONLY input method, system keyboard suppressed */}
+      {/* Custom Numpad — system keyboard never opens */}
       <div className="grid grid-cols-3 gap-2">
         {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'backspace'].map((key) => (
           <button
@@ -167,7 +173,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
               e.preventDefault();
               handleNumKey(key);
             }}
-            className="h-14 bg-[#1A1A1A] active:bg-[#2A2A2A] rounded-2xl flex items-center justify-center border border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+            className="h-14 bg-[#1A1A1A] active:bg-[#252525] rounded-2xl flex items-center justify-center border border-white/5"
           >
             {key === 'backspace' ? (
               <Delete size={18} className="text-[#A0A0A0]" />
@@ -183,7 +189,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Clock size={12} className="text-[#6B6B6B]" />
-            <p className="text-xs text-[#6B6B6B] uppercase tracking-wider">Recently used</p>
+            <p className="text-xs text-[#6B6B6B] uppercase tracking-wider">Recent</p>
           </div>
           <div className="flex gap-2 flex-wrap">
             {recentCategories.map((cat) => (
@@ -207,7 +213,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
       {/* Category Selector */}
       <button
         onPointerDown={(e) => { e.preventDefault(); setShowCategorySheet(true); }}
-        className="w-full bg-[#1A1A1A] border border-white/5 rounded-2xl p-4 flex items-center gap-3"
+        className="w-full bg-[#1A1A1A] border border-white/5 rounded-2xl p-4 flex items-center gap-3 active:bg-[#222222] transition-colors"
       >
         {selectedCategory && (
           <CategoryIcon icon={selectedCategory.icon} color={selectedCategory.color} size="md" />
@@ -252,11 +258,11 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
         disabled={!isValid || saving}
         className={`w-full py-4 rounded-2xl text-sm font-semibold transition-all duration-200 ${
           isValid && !saving
-            ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+            ? 'bg-indigo-500 active:bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
             : 'bg-[#1A1A1A] text-[#444444] border border-white/5 cursor-not-allowed'
         }`}
       >
-        {saving ? 'Saving...' : editingExpense ? 'Update Expense' : 'Save Expense'}
+        {saving ? 'Saving…' : editingExpense ? 'Update Expense' : 'Save Expense'}
       </button>
 
       {/* Category Bottom Sheet */}
@@ -277,7 +283,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
                 <button
                   key={cat.id}
                   onPointerDown={(e) => { e.stopPropagation(); handleSelectCategory(cat.id); }}
-                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all active:opacity-70 ${
                     categoryId === cat.id
                       ? 'border-indigo-500/50 bg-indigo-500/10'
                       : 'border-white/5 bg-[#1A1A1A]'

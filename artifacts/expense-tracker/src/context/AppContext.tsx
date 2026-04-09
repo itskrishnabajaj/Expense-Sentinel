@@ -9,6 +9,7 @@ interface AppContextValue {
   categories: Category[];
   settings: AppSettings;
   loading: boolean;
+  dbUnavailable: boolean;
   addExpense: (data: Omit<Expense, 'id' | 'createdAt'>) => Promise<Expense>;
   updateExpense: (id: string, data: Partial<Omit<Expense, 'id' | 'createdAt'>>) => Promise<Expense | null>;
   deleteExpense: (id: string) => Promise<void>;
@@ -27,6 +28,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [settings, setSettings] = useState<AppSettings>(SETTINGS_DEFAULTS);
   const [loading, setLoading] = useState(true);
+  const [dbUnavailable, setDbUnavailable] = useState(false);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -39,6 +41,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setExpenses(expData);
       setCategories(catData);
       setSettings(setData);
+      setDbUnavailable(false);
+    } catch {
+      setDbUnavailable(true);
     } finally {
       setLoading(false);
     }
@@ -105,6 +110,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       categories,
       settings,
       loading,
+      dbUnavailable,
       addExpense: handleAddExpense,
       updateExpense: handleUpdateExpense,
       deleteExpense: handleDeleteExpense,

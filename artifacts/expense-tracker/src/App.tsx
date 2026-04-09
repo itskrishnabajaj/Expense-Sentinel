@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
+import { AppProvider, useApp } from './context/AppContext';
 import { BottomNav } from './components/BottomNav';
 import { InstallPrompt } from './components/InstallPrompt';
 import { Home } from './pages/Home';
@@ -8,8 +8,33 @@ import { Insights } from './pages/Insights';
 import { History } from './pages/History';
 import { SettingsPage } from './pages/SettingsPage';
 
+function DBErrorScreen() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full px-8 text-center">
+      <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mb-4">
+        <span className="text-3xl">⚠️</span>
+      </div>
+      <h2 className="text-lg font-semibold text-white mb-2">Storage unavailable</h2>
+      <p className="text-sm text-[#6B6B6B] leading-relaxed">
+        This app requires local storage access. If you're in private browsing mode, please switch to a regular window.
+      </p>
+    </div>
+  );
+}
+
 function AnimatedRoutes() {
   const location = useLocation();
+  const { dbUnavailable } = useApp();
+
+  if (dbUnavailable) {
+    return (
+      <div className="h-full bg-[#0D0D0D] text-white flex flex-col">
+        <main className="flex-1 scroll-native">
+          <DBErrorScreen />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full bg-[#0D0D0D] text-white flex flex-col">

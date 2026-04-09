@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 interface CategoryIconProps {
   icon: string;
   color: string;
@@ -10,7 +12,7 @@ const sizeClasses = {
   lg: 'w-12 h-12 text-xl',
 };
 
-export function CategoryIcon({ icon, color, size = 'md' }: CategoryIconProps) {
+export const CategoryIcon = memo(function CategoryIcon({ icon, color, size = 'md' }: CategoryIconProps) {
   return (
     <div
       className={`${sizeClasses[size]} rounded-xl flex items-center justify-center flex-shrink-0`}
@@ -19,4 +21,4 @@ export function CategoryIcon({ icon, color, size = 'md' }: CategoryIconProps) {
       <span>{icon}</span>
     </div>
   );
-}
+});

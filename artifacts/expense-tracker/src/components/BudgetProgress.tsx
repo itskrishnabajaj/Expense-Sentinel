@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 
 interface BudgetProgressProps {
   spent: number;
@@ -6,25 +6,13 @@ interface BudgetProgressProps {
   showLabel?: boolean;
 }
 
-export function BudgetProgress({ spent, budget, showLabel = true }: BudgetProgressProps) {
+export const BudgetProgress = memo(function BudgetProgress({ spent, budget, showLabel = true }: BudgetProgressProps) {
   const pct = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
 
   const { color, bgColor, label } = useMemo(() => {
-    if (pct >= 100) return {
-      color: 'bg-red-500',
-      bgColor: 'bg-red-500/10',
-      label: 'Over budget',
-    };
-    if (pct >= 80) return {
-      color: 'bg-amber-500',
-      bgColor: 'bg-amber-500/10',
-      label: 'Almost there',
-    };
-    return {
-      color: 'bg-indigo-500',
-      bgColor: 'bg-indigo-500/10',
-      label: 'On track',
-    };
+    if (pct >= 100) return { color: 'bg-red-500', bgColor: 'bg-red-500/10', label: 'Over budget' };
+    if (pct >= 80) return { color: 'bg-amber-500', bgColor: 'bg-amber-500/10', label: 'Almost there' };
+    return { color: 'bg-indigo-500', bgColor: 'bg-indigo-500/10', label: 'On track' };
   }, [pct]);
 
   return (
@@ -43,4 +31,4 @@ export function BudgetProgress({ spent, budget, showLabel = true }: BudgetProgre
       </div>
     </div>
   );
-}
+});
