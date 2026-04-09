@@ -1,13 +1,28 @@
 import { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
-import { Expense, Category } from '../database';
+import { Expense, Category, Account, Transaction } from '../database';
 import { getExpenses, addExpense, updateExpense, deleteExpense } from '../database/expenses';
 import { getCategories, addCategory, updateCategory, deleteCategory } from '../database/categories';
 import { getAllSettings, setSetting, clearAllData, AppSettings, SETTINGS_DEFAULTS } from '../database/settings';
+import {
+  getAccounts,
+  addAccount as dbAddAccount,
+  updateAccount as dbUpdateAccount,
+  deleteAccount as dbDeleteAccount,
+  ensureDefaultAccount,
+} from '../database/accounts';
+import {
+  getTransactions,
+  addTransaction as dbAddTransaction,
+  updateTransaction as dbUpdateTransaction,
+  deleteTransaction as dbDeleteTransaction,
+} from '../database/transactions';
 
 interface AppContextValue {
   expenses: Expense[];
   categories: Category[];
   settings: AppSettings;
+  accounts: Account[];
+  transactions: Transaction[];
   loading: boolean;
   dbUnavailable: boolean;
   addExpense: (data: Omit<Expense, 'id' | 'createdAt'>) => Promise<Expense>;
@@ -17,6 +32,12 @@ interface AppContextValue {
   updateCategory: (id: string, data: Partial<Omit<Category, 'id'>>) => Promise<Category | null>;
   deleteCategory: (id: string) => Promise<void>;
   updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => Promise<void>;
+  addAccount: (data: Omit<Account, 'id' | 'createdAt'>) => Promise<Account>;
+  updateAccount: (id: string, data: Partial<Omit<Account, 'id' | 'createdAt'>>) => Promise<Account | null>;
+  deleteAccount: (id: string) => Promise<void>;
+  addTransaction: (data: Omit<Transaction, 'id' | 'createdAt'>) => Promise<Transaction>;
+  updateTransaction: (id: string, data: Partial<Omit<Transaction, 'id' | 'createdAt'>>) => Promise<Transaction | null>;
+  deleteTransaction: (id: string) => Promise<void>;
   clearAll: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -27,20 +48,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [settings, setSettings] = useState<AppSettings>(SETTINGS_DEFAULTS);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [dbUnavailable, setDbUnavailable] = useState(false);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [expData, catData, setData] = await Promise.all([
+      await ensureDefaultAccount();
+      const [expData, catData, setData, accData, txData] = await Promise.all([
         getExpenses(),
         getCategories(),
         getAllSettings(),
+        getAccounts(),
+        getTransactions(),
       ]);
       setExpenses(expData);
       setCategories(catData);
       setSettings(setData);
+      setAccounts(accData);
+      setTransactions(txData);
       setDbUnavailable(false);
     } catch {
       setDbUnavailable(true);
@@ -96,11 +124,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSettings((prev) => ({ ...prev, [key]: value }));
   }, []);
 
+  const handleAddAccount = useCallback(async (data: Omit<Account, 'id' | 'createdAt'>) => {
+    const account = await dbAddAccount(data);
+    setAccounts((prev) => [...prev, account]);
+    return account;
+  }, []);
+
+  const handleUpdateAccount = useCallback(async (id: string, data: Partial<Omit<Account, 'id' | 'createdAt'>>) => {
+    const updated = await dbUpdateAccount(id, data);
+    if (updated) {
+      setAccounts((prev) => prev.map((a) => (a.id === id ? updated : a)));
+    }
+    return updated;
+  }, []);
+
+  const handleDeleteAccount = useCallback(async (id: string) => {
+    await dbDeleteAccount(id);
+    setAccounts((prev) => prev.filter((a) => a.id !== id));
+  }, []);
+
+  const handleAddTransaction = useCallback(async (data: Omit<Transaction, 'id' | 'createdAt'>) => {
+    const tx = await dbAddTransaction(data);
+    setTransactions((prev) => [tx, ...prev]);
+    return tx;
+  }, []);
+
+  const handleUpdateTransaction = useCallback(async (id: string, data: Partial<Omit<Transaction, 'id' | 'createdAt'>>) => {
+    const updated = await dbUpdateTransaction(id, data);
+    if (updated) {
+      setTransactions((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    }
+    return updated;
+  }, []);
+
+  const handleDeleteTransaction = useCallback(async (id: string) => {
+    await dbDeleteTransaction(id);
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
   const handleClearAll = useCallback(async () => {
     await clearAllData();
     setExpenses([]);
     setCategories([]);
     setSettings(SETTINGS_DEFAULTS);
+    setAccounts([]);
+    setTransactions([]);
     await loadAll();
   }, [loadAll]);
 
@@ -109,6 +177,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       expenses,
       categories,
       settings,
+      accounts,
+      transactions,
       loading,
       dbUnavailable,
       addExpense: handleAddExpense,
@@ -118,6 +188,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateCategory: handleUpdateCategory,
       deleteCategory: handleDeleteCategory,
       updateSetting: handleUpdateSetting,
+      addAccount: handleAddAccount,
+      updateAccount: handleUpdateAccount,
+      deleteAccount: handleDeleteAccount,
+      addTransaction: handleAddTransaction,
+      updateTransaction: handleUpdateTransaction,
+      deleteTransaction: handleDeleteTransaction,
       clearAll: handleClearAll,
       refresh: loadAll,
     }}>

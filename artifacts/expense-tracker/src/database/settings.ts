@@ -30,10 +30,15 @@ export async function getAllSettings(): Promise<AppSettings> {
 
 export async function clearAllData(): Promise<void> {
   const db = await getDB();
-  const tx = db.transaction(['expenses', 'categories', 'settings'], 'readwrite');
+  const tx = db.transaction(
+    ['expenses', 'categories', 'settings', 'accounts', 'transactions'],
+    'readwrite'
+  );
   await tx.objectStore('expenses').clear();
   await tx.objectStore('categories').clear();
   await tx.objectStore('settings').clear();
+  await tx.objectStore('accounts').clear();
+  await tx.objectStore('transactions').clear();
   await tx.done;
 }
 
