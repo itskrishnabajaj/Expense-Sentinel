@@ -103,22 +103,6 @@
   }
 }
 
-/* ─── Page transition ────────────────────────────────────────────────── */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.16s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-}
-
 /* ─── Success scale-in ───────────────────────────────────────────────── */
 @keyframes scale-in {
   from {
@@ -172,12 +156,6 @@
 .animate-fade-overlay {
   animation: fade-overlay 0.2s ease both;
 }
-
-/* ─── Stagger delay utilities ────────────────────────────────────────── */
-.delay-50  { animation-delay: 50ms;  }
-.delay-100 { animation-delay: 100ms; }
-.delay-150 { animation-delay: 150ms; }
-.delay-200 { animation-delay: 200ms; }
 
 /* ─── Button press micro-interaction ────────────────────────────────── */
 button:not(:disabled):active {
