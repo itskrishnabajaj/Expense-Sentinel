@@ -10,7 +10,7 @@ import {
   Cell,
   ResponsiveContainer,
 } from 'recharts';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Wallet } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { InsightsPageSkeleton } from '../components/Skeleton';
@@ -18,8 +18,10 @@ import { formatCurrency, getMonthName } from '../utils/formatters';
 
 type View = 'month' | 'week' | 'compare';
 
+const ACCOUNT_TYPE_ICONS: Record<string, string> = { cash: '💵', bank: '🏦', savings: '💰' };
+
 export function Insights() {
-  const { expenses, categories, settings, loading } = useApp();
+  const { expenses, transactions, categories, accounts, settings, loading } = useApp();
   const [view, setView] = useState<View>('month');
 
   const now = new Date();
@@ -69,8 +71,33 @@ export function Insights() {
     });
   }, [expenses]);
 
+  const thisMonthTransactions = useMemo(() =>
+    transactions.filter((t) => {
+      const d = new Date(t.date + 'T00:00:00');
+      return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+    }),
+    [transactions, currentMonth, currentYear]
+  );
+
+  const thisWeekTransactions = useMemo(() => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - dayOfWeek);
+    startOfWeek.setHours(0, 0, 0, 0);
+    return transactions.filter((t) => new Date(t.date + 'T00:00:00') >= startOfWeek);
+  }, [transactions]);
+
   const filteredExpenses = view === 'week' ? thisWeekExpenses : thisMonthExpenses;
+  const filteredTransactions = view === 'week' ? thisWeekTransactions : thisMonthTransactions;
+
   const total = useMemo(() => filteredExpenses.reduce((sum, e) => sum + e.amount, 0), [filteredExpenses]);
+  const incomeTotal = useMemo(
+    () => filteredTransactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0),
+    [filteredTransactions]
+  );
+  const netFlow = incomeTotal - total;
+
   const thisMonthTotal = useMemo(() => thisMonthExpenses.reduce((sum, e) => sum + e.amount, 0), [thisMonthExpenses]);
   const lastMonthTotal = useMemo(() => lastMonthExpenses.reduce((sum, e) => sum + e.amount, 0), [lastMonthExpenses]);
   const thisWeekTotal = useMemo(() => thisWeekExpenses.reduce((sum, e) => sum + e.amount, 0), [thisWeekExpenses]);
@@ -112,6 +139,8 @@ export function Insights() {
   const monthDelta = lastMonthTotal > 0 ? ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100 : null;
   const weekDelta = lastWeekTotal > 0 ? ((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100 : null;
 
+  const netWorth = useMemo(() => accounts.reduce((s, a) => s + a.balance, 0), [accounts]);
+
   if (loading) {
     return <InsightsPageSkeleton />;
   }
@@ -124,6 +153,43 @@ export function Insights() {
         <h1 className="text-2xl font-bold text-white">Insights</h1>
       </div>
 
+      {/* Accounts Summary */}
+      {accounts.length > 0 && (
+        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-white">Accounts</h2>
+            <div className="flex items-center gap-1.5">
+              <Wallet size={13} className="text-[#6B6B6B]" />
+              <span className="text-xs text-[#6B6B6B]">Net: {formatCurrency(netWorth, settings.currency)}</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {accounts.map((acc) => {
+              const pct = netWorth > 0 ? Math.min((acc.balance / netWorth) * 100, 100) : 0;
+              return (
+                <div key={acc.id} className="flex items-center gap-3">
+                  <span className="text-base flex-shrink-0">{ACCOUNT_TYPE_ICONS[acc.type] ?? '💳'}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-[#A0A0A0] truncate">{acc.name}</span>
+                      <span className="text-xs font-medium text-white ml-2 flex-shrink-0">
+                        {formatCurrency(acc.balance, settings.currency)}
+                      </span>
+                    </div>
+                    <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%`, backgroundColor: '#6366F1' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* View Toggle */}
       <div className="flex bg-[#1A1A1A] rounded-xl p-1 border border-white/5">
         {(['month', 'week', 'compare'] as View[]).map((v) => (
@@ -131,9 +197,7 @@ export function Insights() {
             key={v}
             onClick={() => setView(v)}
             className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
-              view === v
-                ? 'bg-indigo-500 text-white shadow-sm'
-                : 'text-[#6B6B6B]'
+              view === v ? 'bg-indigo-500 text-white shadow-sm' : 'text-[#6B6B6B]'
             }`}
           >
             {v === 'month' ? getMonthName(currentMonth) : v === 'week' ? 'This Week' : 'Compare'}
@@ -243,111 +307,126 @@ export function Insights() {
       {/* Month / Week View */}
       {view !== 'compare' && (
         <>
-          {filteredExpenses.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center min-h-[calc(100vh-260px)]">
+          {filteredExpenses.length === 0 && incomeTotal === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center min-h-[calc(100vh-380px)]">
               <p className="text-4xl mb-4">📊</p>
               <h3 className="text-base font-semibold text-white mb-2">No data yet</h3>
-              <p className="text-sm text-[#6B6B6B]">Add expenses to see your insights</p>
+              <p className="text-sm text-[#6B6B6B]">Add transactions to see your insights</p>
             </div>
           ) : (
             <>
-              <div className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
-                <p className="text-xs text-[#6B6B6B] mb-1">
-                  {view === 'month' ? 'This month' : 'This week'}
-                </p>
-                <p className="text-3xl font-bold text-white">{formatCurrency(total, settings.currency)}</p>
+              {/* Income / Expense / Net Flow */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-[#1A1A1A] rounded-2xl p-3.5 border border-white/5">
+                  <p className="text-[10px] text-[#6B6B6B] mb-1 uppercase tracking-wider">Income</p>
+                  <p className="text-sm font-bold text-emerald-400">{formatCurrency(incomeTotal, settings.currency)}</p>
+                </div>
+                <div className="bg-[#1A1A1A] rounded-2xl p-3.5 border border-white/5">
+                  <p className="text-[10px] text-[#6B6B6B] mb-1 uppercase tracking-wider">Expenses</p>
+                  <p className="text-sm font-bold text-white">{formatCurrency(total, settings.currency)}</p>
+                </div>
+                <div className={`rounded-2xl p-3.5 border ${netFlow >= 0 ? 'bg-emerald-500/8 border-emerald-500/15' : 'bg-red-500/8 border-red-500/15'}`}>
+                  <p className="text-[10px] text-[#6B6B6B] mb-1 uppercase tracking-wider">Net</p>
+                  <p className={`text-sm font-bold ${netFlow >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {netFlow >= 0 ? '+' : ''}{formatCurrency(netFlow, settings.currency)}
+                  </p>
+                </div>
               </div>
 
-              {categoryData.length > 0 && (
-                <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
-                  <h2 className="text-sm font-semibold text-white mb-4">By Category</h2>
-                  <div className="h-44 mb-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={categoryData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={75}
-                          paddingAngle={3}
-                          dataKey="amount"
-                        >
-                          {categoryData.map((entry) => (
-                            <Cell key={entry.id} fill={entry.color} opacity={0.9} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white' }}
-                          formatter={(value: number) => [formatCurrency(value, settings.currency), '']}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="space-y-2">
-                    {categoryData.map((cat) => (
-                      <div key={cat.id} className="flex items-center gap-3">
-                        <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs text-[#A0A0A0]">{cat.name}</span>
-                            <span className="text-xs font-medium text-white">
-                              {formatCurrency(cat.amount, settings.currency)}
-                            </span>
-                          </div>
-                          <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full" style={{ width: `${cat.pct}%`, backgroundColor: cat.color }} />
-                          </div>
-                        </div>
-                        <span className="text-xs text-[#6B6B6B] w-8 text-right">{cat.pct.toFixed(0)}%</span>
+              {filteredExpenses.length > 0 && (
+                <>
+                  {categoryData.length > 0 && (
+                    <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+                      <h2 className="text-sm font-semibold text-white mb-4">Expenses by Category</h2>
+                      <div className="h-44 mb-4">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={categoryData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={50}
+                              outerRadius={75}
+                              paddingAngle={3}
+                              dataKey="amount"
+                            >
+                              {categoryData.map((entry) => (
+                                <Cell key={entry.id} fill={entry.color} opacity={0.9} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white' }}
+                              formatter={(value: number) => [formatCurrency(value, settings.currency), '']}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {dailyData.length > 1 && (
-                <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
-                  <h2 className="text-sm font-semibold text-white mb-4">Daily Spending</h2>
-                  <div className="h-40">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dailyData} barSize={20}>
-                        <XAxis dataKey="date" tick={{ fill: '#6B6B6B', fontSize: 10 }} axisLine={false} tickLine={false} />
-                        <YAxis hide />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white' }}
-                          formatter={(value: number) => [formatCurrency(value, settings.currency), 'Spent']}
-                        />
-                        <Bar dataKey="amount" fill="#6366F1" radius={[6, 6, 0, 0]} opacity={0.85} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                {highestCategory && (
-                  <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
-                    <p className="text-xs text-[#6B6B6B] mb-2">Top Category</p>
-                    <div className="flex items-center gap-2 mb-1">
-                      <CategoryIcon icon={highestCategory.icon} color={highestCategory.color} size="sm" />
-                      <span className="text-xs text-[#A0A0A0] truncate">{highestCategory.name}</span>
+                      <div className="space-y-2">
+                        {categoryData.map((cat) => (
+                          <div key={cat.id} className="flex items-center gap-3">
+                            <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-[#A0A0A0]">{cat.name}</span>
+                                <span className="text-xs font-medium text-white">
+                                  {formatCurrency(cat.amount, settings.currency)}
+                                </span>
+                              </div>
+                              <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full" style={{ width: `${cat.pct}%`, backgroundColor: cat.color }} />
+                              </div>
+                            </div>
+                            <span className="text-xs text-[#6B6B6B] w-8 text-right">{cat.pct.toFixed(0)}%</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <p className="text-sm font-bold text-white">
-                      {formatCurrency(highestCategory.amount, settings.currency)}
-                    </p>
+                  )}
+
+                  {dailyData.length > 1 && (
+                    <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+                      <h2 className="text-sm font-semibold text-white mb-4">Daily Spending</h2>
+                      <div className="h-40">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={dailyData} barSize={20}>
+                            <XAxis dataKey="date" tick={{ fill: '#6B6B6B', fontSize: 10 }} axisLine={false} tickLine={false} />
+                            <YAxis hide />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white' }}
+                              formatter={(value: number) => [formatCurrency(value, settings.currency), 'Spent']}
+                            />
+                            <Bar dataKey="amount" fill="#6366F1" radius={[6, 6, 0, 0]} opacity={0.85} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {highestCategory && (
+                      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+                        <p className="text-xs text-[#6B6B6B] mb-2">Top Category</p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <CategoryIcon icon={highestCategory.icon} color={highestCategory.color} size="sm" />
+                          <span className="text-xs text-[#A0A0A0] truncate">{highestCategory.name}</span>
+                        </div>
+                        <p className="text-sm font-bold text-white">
+                          {formatCurrency(highestCategory.amount, settings.currency)}
+                        </p>
+                      </div>
+                    )}
+                    {highestDay && (
+                      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+                        <p className="text-xs text-[#6B6B6B] mb-2">Highest Day</p>
+                        <p className="text-xs text-[#A0A0A0] mb-1">{highestDay.date}</p>
+                        <p className="text-sm font-bold text-white">
+                          {formatCurrency(highestDay.amount, settings.currency)}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                )}
-                {highestDay && (
-                  <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
-                    <p className="text-xs text-[#6B6B6B] mb-2">Highest Day</p>
-                    <p className="text-xs text-[#A0A0A0] mb-1">{highestDay.date}</p>
-                    <p className="text-sm font-bold text-white">
-                      {formatCurrency(highestDay.amount, settings.currency)}
-                    </p>
-                  </div>
-                )}
-              </div>
+                </>
+              )}
             </>
           )}
         </>
