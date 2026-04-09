@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link } from 'wouter';
+import { Link } from 'react-router-dom';
 import { ArrowRight, Plus, TrendingDown, Wallet, Calendar } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { BudgetProgress } from '../components/BudgetProgress';
@@ -69,7 +69,7 @@ export function Home() {
           </p>
           <h1 className="text-2xl font-bold text-white">Overview</h1>
         </div>
-        <Link href="/add" className="w-10 h-10 bg-indigo-500/15 rounded-xl flex items-center justify-center hover:bg-indigo-500/25 transition-colors">
+        <Link to="/add" className="w-10 h-10 bg-indigo-500/15 rounded-xl flex items-center justify-center hover:bg-indigo-500/25 transition-colors">
           <Plus size={18} className="text-indigo-400" />
         </Link>
       </div>
@@ -137,7 +137,7 @@ export function Home() {
         <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-white">Top Categories</h2>
-            <Link href="/insights" className="text-xs text-indigo-400 flex items-center gap-1 hover:text-indigo-300 transition-colors">
+            <Link to="/insights" className="text-xs text-indigo-400 flex items-center gap-1 hover:text-indigo-300 transition-colors">
               View all <ArrowRight size={12} />
             </Link>
           </div>
@@ -173,7 +173,7 @@ export function Home() {
         <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-white">Recent</h2>
-            <Link href="/history" className="text-xs text-indigo-400 flex items-center gap-1 hover:text-indigo-300 transition-colors">
+            <Link to="/history" className="text-xs text-indigo-400 flex items-center gap-1 hover:text-indigo-300 transition-colors">
               View all <ArrowRight size={12} />
             </Link>
           </div>
@@ -205,7 +205,7 @@ export function Home() {
           </div>
           <h3 className="text-base font-semibold text-white mb-2">No expenses yet</h3>
           <p className="text-sm text-[#6B6B6B] mb-6">Start tracking your spending</p>
-          <Link href="/add" className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-500 text-white text-sm font-medium rounded-xl hover:bg-indigo-400 transition-colors">
+          <Link to="/add" className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-500 text-white text-sm font-medium rounded-xl hover:bg-indigo-400 transition-colors">
             <Plus size={16} />
             Add first expense
           </Link>

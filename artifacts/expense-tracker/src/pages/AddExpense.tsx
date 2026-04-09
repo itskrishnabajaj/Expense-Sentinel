@@ -1,10 +1,27 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useLocation } from 'wouter';
-import { Check, ChevronLeft, ChevronDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Check, ChevronLeft, ChevronDown, Clock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { getTodayString, formatCurrency } from '../utils/formatters';
 import { Expense } from '../database';
+
+const RECENT_CATS_KEY = 'expense_recent_categories';
+const MAX_RECENT = 3;
+
+function getRecentCategories(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_CATS_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentCategory(id: string) {
+  const recents = getRecentCategories().filter((r) => r !== id);
+  recents.unshift(id);
+  localStorage.setItem(RECENT_CATS_KEY, JSON.stringify(recents.slice(0, MAX_RECENT)));
+}
 
 interface EditExpenseProps {
   expense?: Expense;
@@ -13,7 +30,7 @@ interface EditExpenseProps {
 
 export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps) {
   const { addExpense, updateExpense, categories, settings } = useApp();
-  const [, navigate] = useLocation();
+  const navigate = useNavigate();
 
   const [amount, setAmount] = useState(editingExpense ? String(editingExpense.amount) : '');
   const [categoryId, setCategoryId] = useState(editingExpense?.category || categories[0]?.id || '');
@@ -22,6 +39,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showCategorySheet, setShowCategorySheet] = useState(false);
+  const [recentCategoryIds] = useState<string[]>(getRecentCategories);
 
   const amountRef = useRef<HTMLInputElement>(null);
 
@@ -37,6 +55,10 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
 
   const selectedCategory = categories.find((c) => c.id === categoryId) || categories[0];
 
+  const recentCategories = recentCategoryIds
+    .map((id) => categories.find((c) => c.id === id))
+    .filter(Boolean) as typeof categories;
+
   const handleAmountKey = (key: string) => {
     if (key === 'backspace') {
       setAmount((prev) => prev.slice(0, -1));
@@ -50,6 +72,12 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
       if (parts[1] && parts[1].length > 2) return;
       setAmount(next);
     }
+  };
+
+  const handleSelectCategory = (id: string) => {
+    setCategoryId(id);
+    saveRecentCategory(id);
+    setShowCategorySheet(false);
   };
 
   const handleSave = useCallback(async () => {
@@ -72,6 +100,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           date,
           note: note.trim(),
         });
+        saveRecentCategory(categoryId);
       }
       setSuccess(true);
       setTimeout(() => {
@@ -121,7 +150,6 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
             <span className="text-[#333333]">{settings.currency === 'USD' ? '$' : settings.currency} 0.00</span>
           )}
         </div>
-        {/* Hidden actual input for mobile keyboard fallback */}
         <input
           ref={amountRef}
           type="number"
@@ -151,6 +179,32 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           </button>
         ))}
       </div>
+
+      {/* Recently Used Quick Picks */}
+      {recentCategories.length > 0 && !editingExpense && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Clock size={12} className="text-[#6B6B6B]" />
+            <p className="text-xs text-[#6B6B6B] uppercase tracking-wider">Recently used</p>
+          </div>
+          <div className="flex gap-2">
+            {recentCategories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => handleSelectCategory(cat.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${
+                  categoryId === cat.id
+                    ? 'border-indigo-500/50 bg-indigo-500/10'
+                    : 'border-white/5 bg-[#1A1A1A] hover:border-white/10'
+                }`}
+              >
+                <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
+                <span className="text-xs text-white">{cat.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Category Selector */}
       <button
@@ -222,7 +276,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
               {categories.map((cat) => (
                 <button
                   key={cat.id}
-                  onClick={() => { setCategoryId(cat.id); setShowCategorySheet(false); }}
+                  onClick={() => handleSelectCategory(cat.id)}
                   className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                     categoryId === cat.id
                       ? 'border-indigo-500/50 bg-indigo-500/10'
