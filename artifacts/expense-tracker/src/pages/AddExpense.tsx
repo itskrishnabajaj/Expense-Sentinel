@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronLeft, ChevronDown, Clock } from 'lucide-react';
+import { Check, ChevronLeft, ChevronDown, Clock, Delete } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { getTodayString, formatCurrency } from '../utils/formatters';
@@ -41,12 +41,6 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
   const [showCategorySheet, setShowCategorySheet] = useState(false);
   const [recentCategoryIds] = useState<string[]>(getRecentCategories);
 
-  const amountRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setTimeout(() => amountRef.current?.focus(), 100);
-  }, []);
-
   useEffect(() => {
     if (categories.length > 0 && !categoryId) {
       setCategoryId(categories[0].id);
@@ -59,17 +53,18 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
     .map((id) => categories.find((c) => c.id === id))
     .filter(Boolean) as typeof categories;
 
-  const handleAmountKey = (key: string) => {
+  const handleNumKey = (key: string) => {
     if (key === 'backspace') {
       setAmount((prev) => prev.slice(0, -1));
-    } else if (key === 'clear') {
-      setAmount('');
     } else if (key === '.' && amount.includes('.')) {
       return;
+    } else if (key === '.') {
+      setAmount((prev) => (prev === '' ? '0.' : prev + '.'));
     } else {
       const next = amount + key;
       const parts = next.split('.');
       if (parts[1] && parts[1].length > 2) return;
+      if (next.replace('.', '').length > 9) return;
       setAmount(next);
     }
   };
@@ -127,12 +122,16 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
     );
   }
 
+  const displayAmount = amount
+    ? formatCurrency(parseFloat(amount) || 0, settings.currency)
+    : null;
+
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-5 pb-4">
       {/* Header */}
       {!editingExpense && (
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="p-2 -ml-2 text-[#6B6B6B] hover:text-white transition-colors">
+          <button onClick={() => navigate('/')} className="p-2 -ml-2 text-[#6B6B6B]">
             <ChevronLeft size={20} />
           </button>
           <h1 className="text-lg font-bold text-white">Add Expense</h1>
@@ -142,37 +141,36 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
         <h1 className="text-lg font-bold text-white">Edit Expense</h1>
       )}
 
-      {/* Amount Display */}
-      <div className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/5 text-center">
+      {/* Amount Display — tap here does NOT open keyboard */}
+      <div className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/5 text-center shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
         <p className="text-xs text-[#6B6B6B] mb-2 uppercase tracking-widest">Amount</p>
         <div className="text-5xl font-bold text-white tracking-tight min-h-[60px] flex items-center justify-center">
-          {amount ? formatCurrency(parseFloat(amount) || 0, settings.currency) : (
-            <span className="text-[#333333]">{settings.currency === 'USD' ? '$' : settings.currency} 0.00</span>
+          {displayAmount ? (
+            <span>{displayAmount}</span>
+          ) : (
+            <span className="text-[#2A2A2A]">₹0</span>
           )}
         </div>
-        <input
-          ref={amountRef}
-          type="number"
-          inputMode="decimal"
-          className="sr-only"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
+        {amount && !displayAmount && (
+          <div className="text-5xl font-bold text-white tracking-tight min-h-[60px] flex items-center justify-center">
+            <span className="text-[#6B6B6B] text-2xl">{amount}</span>
+          </div>
+        )}
       </div>
 
-      {/* Numpad */}
+      {/* Custom Numpad — ONLY input method, system keyboard suppressed */}
       <div className="grid grid-cols-3 gap-2">
         {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'backspace'].map((key) => (
           <button
             key={key}
-            onClick={() => handleAmountKey(key)}
-            className="h-14 bg-[#1A1A1A] hover:bg-[#252525] active:bg-[#2A2A2A] rounded-2xl flex items-center justify-center transition-colors border border-white/5"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              handleNumKey(key);
+            }}
+            className="h-14 bg-[#1A1A1A] active:bg-[#2A2A2A] rounded-2xl flex items-center justify-center border border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
           >
             {key === 'backspace' ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#A0A0A0]">
-                <path d="m12 19-7-7 7-7" />
-                <path d="M19 12H5" />
-              </svg>
+              <Delete size={18} className="text-[#A0A0A0]" />
             ) : (
               <span className="text-lg font-medium text-white">{key}</span>
             )}
@@ -187,15 +185,15 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
             <Clock size={12} className="text-[#6B6B6B]" />
             <p className="text-xs text-[#6B6B6B] uppercase tracking-wider">Recently used</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {recentCategories.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => handleSelectCategory(cat.id)}
+                onPointerDown={(e) => { e.preventDefault(); handleSelectCategory(cat.id); }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${
                   categoryId === cat.id
                     ? 'border-indigo-500/50 bg-indigo-500/10'
-                    : 'border-white/5 bg-[#1A1A1A] hover:border-white/10'
+                    : 'border-white/5 bg-[#1A1A1A]'
                 }`}
               >
                 <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
@@ -208,8 +206,8 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
 
       {/* Category Selector */}
       <button
-        onClick={() => setShowCategorySheet(true)}
-        className="w-full bg-[#1A1A1A] border border-white/5 rounded-2xl p-4 flex items-center gap-3 hover:border-white/10 transition-colors"
+        onPointerDown={(e) => { e.preventDefault(); setShowCategorySheet(true); }}
+        className="w-full bg-[#1A1A1A] border border-white/5 rounded-2xl p-4 flex items-center gap-3"
       >
         {selectedCategory && (
           <CategoryIcon icon={selectedCategory.icon} color={selectedCategory.color} size="md" />
@@ -230,6 +228,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           onChange={(e) => setDate(e.target.value)}
           max={getTodayString()}
           className="w-full bg-transparent text-sm text-white outline-none [color-scheme:dark]"
+          style={{ userSelect: 'text', touchAction: 'auto' }}
         />
       </div>
 
@@ -243,6 +242,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           placeholder="What was this for?"
           className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#444444]"
           maxLength={100}
+          style={{ userSelect: 'text', touchAction: 'auto' }}
         />
       </div>
 
@@ -252,7 +252,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
         disabled={!isValid || saving}
         className={`w-full py-4 rounded-2xl text-sm font-semibold transition-all duration-200 ${
           isValid && !saving
-            ? 'bg-indigo-500 hover:bg-indigo-400 text-white shadow-lg shadow-indigo-500/20'
+            ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
             : 'bg-[#1A1A1A] text-[#444444] border border-white/5 cursor-not-allowed'
         }`}
       >
@@ -263,12 +263,12 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
       {showCategorySheet && (
         <div
           className="fixed inset-0 z-50 flex items-end"
-          onClick={() => setShowCategorySheet(false)}
+          onPointerDown={() => setShowCategorySheet(false)}
         >
-          <div className="absolute inset-0 bg-black/60" />
+          <div className="absolute inset-0 bg-black/70" />
           <div
-            className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-8 max-h-[80vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+            className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-10 max-h-[80vh] overflow-y-auto scroll-native"
+            onPointerDown={(e) => e.stopPropagation()}
           >
             <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-6" />
             <h2 className="text-base font-semibold text-white mb-4">Category</h2>
@@ -276,11 +276,11 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
               {categories.map((cat) => (
                 <button
                   key={cat.id}
-                  onClick={() => handleSelectCategory(cat.id)}
+                  onPointerDown={(e) => { e.stopPropagation(); handleSelectCategory(cat.id); }}
                   className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
                     categoryId === cat.id
                       ? 'border-indigo-500/50 bg-indigo-500/10'
-                      : 'border-white/5 bg-[#1A1A1A] hover:border-white/10'
+                      : 'border-white/5 bg-[#1A1A1A]'
                   }`}
                 >
                   <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />

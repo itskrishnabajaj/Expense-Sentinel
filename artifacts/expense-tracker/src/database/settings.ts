@@ -6,8 +6,8 @@ export interface AppSettings {
 }
 
 const DEFAULTS: AppSettings = {
-  monthly_budget: 2000,
-  currency: 'USD',
+  monthly_budget: 20000,
+  currency: 'INR',
 };
 
 export async function getSetting<K extends keyof AppSettings>(key: K): Promise<AppSettings[K]> {
@@ -36,3 +36,5 @@ export async function clearAllData(): Promise<void> {
   await tx.objectStore('settings').clear();
   await tx.done;
 }
+
+export { DEFAULTS as SETTINGS_DEFAULTS };

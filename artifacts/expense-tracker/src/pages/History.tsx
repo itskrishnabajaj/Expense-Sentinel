@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Trash2, Pencil, X, Filter } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
+import { GenericPageSkeleton } from '../components/Skeleton';
 import { AddExpense } from './AddExpense';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { Expense } from '../database';
@@ -38,13 +39,17 @@ export function History() {
     }
   };
 
+  if (loading) {
+    return <GenericPageSkeleton />;
+  }
+
   if (editingExpense) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setEditingExpense(null)}
-            className="p-2 -ml-2 text-[#6B6B6B] hover:text-white transition-colors"
+            className="p-2 -ml-2 text-[#6B6B6B]"
           >
             <X size={20} />
           </button>
@@ -56,7 +61,7 @@ export function History() {
   }
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-5 pb-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -68,7 +73,7 @@ export function History() {
           className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
             filterCategory !== 'all'
               ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400'
-              : 'bg-[#1A1A1A] border-white/5 text-[#6B6B6B] hover:text-white'
+              : 'bg-[#1A1A1A] border-white/5 text-[#6B6B6B]'
           }`}
         >
           <Filter size={14} />
@@ -85,7 +90,7 @@ export function History() {
               className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                 filterCategory === 'all'
                   ? 'bg-indigo-500 text-white'
-                  : 'bg-white/5 text-[#A0A0A0] hover:text-white'
+                  : 'bg-white/5 text-[#A0A0A0]'
               }`}
             >
               All
@@ -97,7 +102,7 @@ export function History() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                   filterCategory === cat.id
                     ? 'bg-indigo-500 text-white'
-                    : 'bg-white/5 text-[#A0A0A0] hover:text-white'
+                    : 'bg-white/5 text-[#A0A0A0]'
                 }`}
               >
                 <span>{cat.icon}</span>
@@ -108,11 +113,7 @@ export function History() {
         </div>
       )}
 
-      {loading ? (
-        <div className="flex items-center justify-center h-48">
-          <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-        </div>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-4xl mb-4">📭</p>
           <h3 className="text-base font-semibold text-white mb-2">No expenses found</h3>
@@ -121,7 +122,7 @@ export function History() {
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {groupedByDate.map(([date, dayExpenses]) => {
             const dayTotal = dayExpenses.reduce((sum, e) => sum + e.amount, 0);
             return (
@@ -143,7 +144,7 @@ export function History() {
                     return (
                       <div
                         key={expense.id}
-                        className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 flex items-center gap-3"
+                        className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
                       >
                         <CategoryIcon icon={cat.icon} color={cat.color} size="md" />
                         <div className="flex-1 min-w-0">
@@ -152,13 +153,13 @@ export function History() {
                           </p>
                           <p className="text-xs text-[#6B6B6B] mt-0.5">{cat.name}</p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <p className="text-sm font-semibold text-white">
                             -{formatCurrency(expense.amount, settings.currency)}
                           </p>
                           <button
                             onClick={() => setEditingExpense(expense)}
-                            className="p-1.5 text-[#6B6B6B] hover:text-white active:text-white transition-colors rounded-lg hover:bg-white/5 flex-shrink-0"
+                            className="p-1.5 text-[#6B6B6B] rounded-lg flex-shrink-0"
                             aria-label="Edit expense"
                           >
                             <Pencil size={13} />
@@ -166,7 +167,7 @@ export function History() {
                           <button
                             onClick={() => handleDelete(expense.id)}
                             disabled={deletingId === expense.id}
-                            className="p-1.5 text-[#6B6B6B] hover:text-red-400 active:text-red-400 transition-colors rounded-lg hover:bg-red-500/10 flex-shrink-0"
+                            className="p-1.5 text-[#6B6B6B] rounded-lg flex-shrink-0 disabled:opacity-40"
                             aria-label="Delete expense"
                           >
                             <Trash2 size={13} />

@@ -4,6 +4,7 @@ import { ArrowRight, Plus, TrendingDown, Wallet, Calendar } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { BudgetProgress } from '../components/BudgetProgress';
 import { CategoryIcon } from '../components/CategoryIcon';
+import { HomePageSkeleton } from '../components/Skeleton';
 import { formatCurrency, getMonthName } from '../utils/formatters';
 
 export function Home() {
@@ -15,16 +16,19 @@ export function Home() {
 
   const monthExpenses = useMemo(() => {
     return expenses.filter((e) => {
-      const d = new Date(e.date);
+      const d = new Date(e.date + 'T00:00:00');
       return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
     });
   }, [expenses, currentMonth, currentYear]);
 
   const total = useMemo(() => monthExpenses.reduce((sum, e) => sum + e.amount, 0), [monthExpenses]);
-  const remaining = settings.monthly_budget - total;
 
-  const daysPassed = now.getDate();
-  const dailyAvg = daysPassed > 0 ? total / daysPassed : 0;
+  const budget = settings.monthly_budget;
+  const remaining = budget - total;
+  const budgetPct = budget > 0 ? Math.min((total / budget) * 100, 100) : 0;
+
+  const daysPassed = Math.max(now.getDate(), 1);
+  const dailyAvg = monthExpenses.length > 0 ? total / daysPassed : 0;
 
   const categoryMap = useMemo(() =>
     new Map(categories.map((c) => [c.id, c])),
@@ -48,19 +52,11 @@ export function Home() {
   const recentExpenses = expenses.slice(0, 3);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-      </div>
-    );
+    return <HomePageSkeleton />;
   }
 
-  const budgetPct = settings.monthly_budget > 0
-    ? Math.min((total / settings.monthly_budget) * 100, 100)
-    : 0;
-
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-5 pb-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -69,38 +65,45 @@ export function Home() {
           </p>
           <h1 className="text-2xl font-bold text-white">Overview</h1>
         </div>
-        <Link to="/add" className="w-10 h-10 bg-indigo-500/15 rounded-xl flex items-center justify-center hover:bg-indigo-500/25 transition-colors">
+        <Link
+          to="/add"
+          className="w-10 h-10 bg-indigo-500/15 rounded-xl flex items-center justify-center"
+        >
           <Plus size={18} className="text-indigo-400" />
         </Link>
       </div>
 
       {/* Total Spent Card */}
-      <div className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/5">
+      <div className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/5 shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
         <p className="text-xs text-[#6B6B6B] mb-1">Total spent this month</p>
         <p className="text-4xl font-bold text-white tracking-tight mb-4">
           {formatCurrency(total, settings.currency)}
         </p>
-        <BudgetProgress spent={total} budget={settings.monthly_budget} />
+        <BudgetProgress spent={total} budget={budget} />
         <div className="mt-3 flex items-center justify-between text-xs text-[#6B6B6B]">
-          <span>Budget: {formatCurrency(settings.monthly_budget, settings.currency)}</span>
-          <span className={remaining >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-            {remaining >= 0 ? `${formatCurrency(remaining, settings.currency)} left` : `${formatCurrency(Math.abs(remaining), settings.currency)} over`}
+          <span>Budget: {formatCurrency(budget, settings.currency)}</span>
+          <span className={remaining >= 0 ? 'text-emerald-400 font-medium' : 'text-red-400 font-medium'}>
+            {remaining >= 0
+              ? `${formatCurrency(remaining, settings.currency)} left`
+              : `${formatCurrency(Math.abs(remaining), settings.currency)} over`}
           </span>
         </div>
       </div>
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
           <div className="w-8 h-8 bg-emerald-500/10 rounded-xl flex items-center justify-center mb-3">
             <Wallet size={15} className="text-emerald-400" />
           </div>
           <p className="text-xs text-[#6B6B6B] mb-1">Remaining</p>
           <p className={`text-lg font-bold ${remaining >= 0 ? 'text-white' : 'text-red-400'}`}>
-            {formatCurrency(Math.max(remaining, 0), settings.currency)}
+            {budget > 0
+              ? formatCurrency(Math.max(remaining, 0), settings.currency)
+              : '—'}
           </p>
         </div>
-        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
           <div className="w-8 h-8 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-3">
             <Calendar size={15} className="text-indigo-400" />
           </div>
@@ -112,21 +115,21 @@ export function Home() {
       </div>
 
       {/* Budget Alert */}
-      {budgetPct >= 80 && (
+      {budget > 0 && budgetPct >= 80 && (
         <div className={`rounded-2xl p-4 border flex items-start gap-3 ${
           budgetPct >= 100
             ? 'bg-red-500/10 border-red-500/20'
             : 'bg-amber-500/10 border-amber-500/20'
         }`}>
-          <TrendingDown size={16} className={budgetPct >= 100 ? 'text-red-400 mt-0.5' : 'text-amber-400 mt-0.5'} />
+          <TrendingDown size={16} className={budgetPct >= 100 ? 'text-red-400 mt-0.5 flex-shrink-0' : 'text-amber-400 mt-0.5 flex-shrink-0'} />
           <div>
             <p className={`text-sm font-medium ${budgetPct >= 100 ? 'text-red-400' : 'text-amber-400'}`}>
               {budgetPct >= 100 ? 'Budget exceeded' : 'Approaching limit'}
             </p>
             <p className="text-xs text-[#6B6B6B] mt-0.5">
               {budgetPct >= 100
-                ? `You've exceeded your budget by ${formatCurrency(Math.abs(remaining), settings.currency)}`
-                : `You've used ${budgetPct.toFixed(0)}% of your monthly budget`}
+                ? `Exceeded by ${formatCurrency(Math.abs(remaining), settings.currency)}`
+                : `${budgetPct.toFixed(0)}% of monthly budget used`}
             </p>
           </div>
         </div>
@@ -134,10 +137,10 @@ export function Home() {
 
       {/* Top Categories */}
       {topCategories.length > 0 && (
-        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-white">Top Categories</h2>
-            <Link to="/insights" className="text-xs text-indigo-400 flex items-center gap-1 hover:text-indigo-300 transition-colors">
+            <Link to="/insights" className="text-xs text-indigo-400 flex items-center gap-1">
               View all <ArrowRight size={12} />
             </Link>
           </div>
@@ -170,10 +173,10 @@ export function Home() {
 
       {/* Recent Expenses */}
       {recentExpenses.length > 0 && (
-        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-white">Recent</h2>
-            <Link to="/history" className="text-xs text-indigo-400 flex items-center gap-1 hover:text-indigo-300 transition-colors">
+            <Link to="/history" className="text-xs text-indigo-400 flex items-center gap-1">
               View all <ArrowRight size={12} />
             </Link>
           </div>
@@ -205,7 +208,10 @@ export function Home() {
           </div>
           <h3 className="text-base font-semibold text-white mb-2">No expenses yet</h3>
           <p className="text-sm text-[#6B6B6B] mb-6">Start tracking your spending</p>
-          <Link to="/add" className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-500 text-white text-sm font-medium rounded-xl hover:bg-indigo-400 transition-colors">
+          <Link
+            to="/add"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-500 text-white text-sm font-medium rounded-xl"
+          >
             <Plus size={16} />
             Add first expense
           </Link>

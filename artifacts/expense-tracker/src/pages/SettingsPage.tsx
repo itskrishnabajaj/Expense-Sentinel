@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
+import { GenericPageSkeleton } from '../components/Skeleton';
 import { exportToCSV } from '../utils/export';
 import { Category } from '../database';
 
@@ -23,13 +24,9 @@ interface CategoryFormData {
 }
 
 export function SettingsPage() {
-  const { settings, categories, updateSetting, addCategory, updateCategory, deleteCategory, clearAll, expenses } = useApp();
+  const { settings, categories, loading, updateSetting, addCategory, updateCategory, deleteCategory, clearAll, expenses } = useApp();
 
   const [budgetInput, setBudgetInput] = useState(String(settings.monthly_budget));
-
-  useEffect(() => {
-    setBudgetInput(String(settings.monthly_budget));
-  }, [settings.monthly_budget]);
   const [budgetSaved, setBudgetSaved] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -37,9 +34,13 @@ export function SettingsPage() {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [categoryForm, setCategoryForm] = useState<CategoryFormData>({ name: '', icon: '💰', color: '#6366F1' });
 
+  useEffect(() => {
+    setBudgetInput(String(settings.monthly_budget));
+  }, [settings.monthly_budget]);
+
   const handleSaveBudget = async () => {
     const val = parseFloat(budgetInput);
-    if (!val || val <= 0) return;
+    if (isNaN(val) || val <= 0) return;
     await updateSetting('monthly_budget', val);
     setBudgetSaved(true);
     setTimeout(() => setBudgetSaved(false), 2000);
@@ -77,8 +78,12 @@ export function SettingsPage() {
     setCategoryForm({ name: cat.name, icon: cat.icon, color: cat.color });
   };
 
+  if (loading) {
+    return <GenericPageSkeleton />;
+  }
+
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-5 pb-4">
       {/* Header */}
       <div>
         <p className="text-xs text-[#6B6B6B] uppercase tracking-widest mb-1">Preferences</p>
@@ -86,19 +91,20 @@ export function SettingsPage() {
       </div>
 
       {/* Budget */}
-      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
         <h2 className="text-sm font-semibold text-white mb-4">Monthly Budget</h2>
         <div className="flex gap-3">
           <div className="flex-1 bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-3 flex items-center gap-2">
-            <span className="text-[#6B6B6B] text-sm">$</span>
+            <span className="text-[#6B6B6B] text-sm">₹</span>
             <input
               type="number"
               value={budgetInput}
               onChange={(e) => setBudgetInput(e.target.value)}
               className="flex-1 bg-transparent text-white text-sm outline-none"
-              placeholder="2000"
+              placeholder="20000"
               min="0"
-              step="100"
+              step="1000"
+              style={{ userSelect: 'text', touchAction: 'auto' }}
             />
           </div>
           <button
@@ -106,7 +112,7 @@ export function SettingsPage() {
             className={`px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
               budgetSaved
                 ? 'bg-emerald-500/15 text-emerald-400'
-                : 'bg-indigo-500 text-white hover:bg-indigo-400'
+                : 'bg-indigo-500 text-white'
             }`}
           >
             {budgetSaved ? <><Check size={14} /> Saved</> : 'Save'}
@@ -115,32 +121,32 @@ export function SettingsPage() {
       </div>
 
       {/* Categories */}
-      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-white">Categories</h2>
           <button
             onClick={() => { setShowAddCategory(true); setCategoryForm({ name: '', icon: '💰', color: '#6366F1' }); }}
-            className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            className="flex items-center gap-1 text-xs text-indigo-400"
           >
             <Plus size={14} />
             Add
           </button>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1">
           {categories.map((cat) => (
-            <div key={cat.id} className="flex items-center gap-3 py-2 group">
+            <div key={cat.id} className="flex items-center gap-3 py-2.5">
               <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
               <span className="flex-1 text-sm text-[#A0A0A0]">{cat.name}</span>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => openEditCategory(cat)}
-                  className="p-1.5 text-[#6B6B6B] hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                  className="p-1.5 text-[#6B6B6B] rounded-lg"
                 >
                   <Pencil size={13} />
                 </button>
                 <button
                   onClick={() => deleteCategory(cat.id)}
-                  className="p-1.5 text-[#6B6B6B] hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10"
+                  className="p-1.5 text-[#6B6B6B] rounded-lg"
                 >
                   <Trash2 size={13} />
                 </button>
@@ -151,10 +157,10 @@ export function SettingsPage() {
       </div>
 
       {/* Data Actions */}
-      <div className="bg-[#1A1A1A] rounded-2xl p-1 border border-white/5">
+      <div className="bg-[#1A1A1A] rounded-2xl p-1 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
         <button
           onClick={handleExport}
-          className="w-full flex items-center gap-3 px-3 py-3.5 hover:bg-white/5 rounded-xl transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-3.5 rounded-xl active:bg-white/5 transition-colors"
         >
           <div className="w-8 h-8 bg-indigo-500/10 rounded-lg flex items-center justify-center">
             <Download size={15} className="text-indigo-400" />
@@ -168,7 +174,7 @@ export function SettingsPage() {
         <div className="h-px bg-white/5 mx-3" />
         <button
           onClick={() => setShowResetConfirm(true)}
-          className="w-full flex items-center gap-3 px-3 py-3.5 hover:bg-red-500/5 rounded-xl transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-3.5 rounded-xl active:bg-red-500/5 transition-colors"
         >
           <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center">
             <Trash2 size={15} className="text-red-400" />
@@ -199,14 +205,14 @@ export function SettingsPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowResetConfirm(false)}
-                className="flex-1 py-3 rounded-xl text-sm font-medium text-[#A0A0A0] bg-white/5 hover:bg-white/10 transition-colors"
+                className="flex-1 py-3 rounded-xl text-sm font-medium text-[#A0A0A0] bg-white/5"
               >
                 Cancel
               </button>
               <button
                 onClick={handleReset}
                 disabled={resetting}
-                className="flex-1 py-3 rounded-xl text-sm font-medium text-white bg-red-500 hover:bg-red-400 transition-colors"
+                className="flex-1 py-3 rounded-xl text-sm font-medium text-white bg-red-500 disabled:opacity-50"
               >
                 {resetting ? 'Resetting...' : 'Reset'}
               </button>
@@ -219,7 +225,7 @@ export function SettingsPage() {
       {(showAddCategory || editingCategory) && (
         <div className="fixed inset-0 z-50 flex items-end">
           <div className="absolute inset-0 bg-black/60" onClick={() => { setShowAddCategory(false); setEditingCategory(null); }} />
-          <div className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-10">
+          <div className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-10 max-h-[85vh] overflow-y-auto scroll-native">
             <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-6" />
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-semibold text-white">
@@ -230,7 +236,6 @@ export function SettingsPage() {
               </button>
             </div>
 
-            {/* Name */}
             <div className="mb-4">
               <label className="block text-xs text-[#6B6B6B] mb-2">Name</label>
               <input
@@ -240,10 +245,10 @@ export function SettingsPage() {
                 placeholder="Category name"
                 className="w-full bg-[#1A1A1A] border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-[#444444] focus:border-indigo-500/50"
                 autoFocus
+                style={{ userSelect: 'text', touchAction: 'auto' }}
               />
             </div>
 
-            {/* Icon */}
             <div className="mb-4">
               <label className="block text-xs text-[#6B6B6B] mb-2">Icon</label>
               <div className="flex flex-wrap gap-2">
@@ -261,7 +266,6 @@ export function SettingsPage() {
               </div>
             </div>
 
-            {/* Color */}
             <div className="mb-6">
               <label className="block text-xs text-[#6B6B6B] mb-2">Color</label>
               <div className="flex flex-wrap gap-2">
@@ -281,7 +285,7 @@ export function SettingsPage() {
             <button
               onClick={editingCategory ? handleUpdateCategory : handleAddCategory}
               disabled={!categoryForm.name.trim()}
-              className="w-full py-3.5 bg-indigo-500 text-white text-sm font-semibold rounded-xl hover:bg-indigo-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full py-3.5 bg-indigo-500 text-white text-sm font-semibold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {editingCategory ? 'Update Category' : 'Add Category'}
             </button>

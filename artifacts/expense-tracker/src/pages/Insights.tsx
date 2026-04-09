@@ -13,6 +13,7 @@ import {
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
+import { InsightsPageSkeleton } from '../components/Skeleton';
 import { formatCurrency, getMonthName } from '../utils/formatters';
 
 type View = 'month' | 'week' | 'compare';
@@ -31,7 +32,7 @@ export function Insights() {
 
   const thisMonthExpenses = useMemo(() =>
     expenses.filter((e) => {
-      const d = new Date(e.date);
+      const d = new Date(e.date + 'T00:00:00');
       return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
     }),
     [expenses, currentMonth, currentYear]
@@ -39,7 +40,7 @@ export function Insights() {
 
   const lastMonthExpenses = useMemo(() =>
     expenses.filter((e) => {
-      const d = new Date(e.date);
+      const d = new Date(e.date + 'T00:00:00');
       return d.getFullYear() === prevMonthYear && d.getMonth() === prevMonth;
     }),
     [expenses, prevMonth, prevMonthYear]
@@ -96,7 +97,7 @@ export function Insights() {
     return Object.entries(days)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, amount]) => ({
-        date: new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: new Date(date + 'T00:00:00').toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
         amount,
       }));
   }, [filteredExpenses]);
@@ -106,21 +107,17 @@ export function Insights() {
     return dailyData.reduce((max, d) => d.amount > max.amount ? d : max, dailyData[0]);
   }, [dailyData]);
 
-  const highestCategory = categoryData[0];
+  const highestCategory = categoryData[0] ?? null;
 
   const monthDelta = lastMonthTotal > 0 ? ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100 : null;
   const weekDelta = lastWeekTotal > 0 ? ((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100 : null;
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-      </div>
-    );
+    return <InsightsPageSkeleton />;
   }
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-5 pb-4">
       {/* Header */}
       <div>
         <p className="text-xs text-[#6B6B6B] uppercase tracking-widest mb-1">Analytics</p>
@@ -136,7 +133,7 @@ export function Insights() {
             className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
               view === v
                 ? 'bg-indigo-500 text-white shadow-sm'
-                : 'text-[#6B6B6B] hover:text-white'
+                : 'text-[#6B6B6B]'
             }`}
           >
             {v === 'month' ? getMonthName(currentMonth) : v === 'week' ? 'This Week' : 'Compare'}
@@ -147,8 +144,7 @@ export function Insights() {
       {/* Compare View */}
       {view === 'compare' && (
         <div className="space-y-4">
-          {/* Monthly Comparison */}
-          <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+          <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
             <p className="text-xs text-[#6B6B6B] mb-3 uppercase tracking-wider">Month over Month</p>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
@@ -160,7 +156,7 @@ export function Insights() {
                 <p className="text-xl font-bold text-white">{formatCurrency(thisMonthTotal, settings.currency)}</p>
               </div>
             </div>
-            {monthDelta !== null && (
+            {monthDelta !== null ? (
               <div className={`flex items-center gap-2 p-3 rounded-xl ${
                 monthDelta > 0 ? 'bg-red-500/10' : monthDelta < 0 ? 'bg-emerald-500/10' : 'bg-white/5'
               }`}>
@@ -176,14 +172,12 @@ export function Insights() {
                   {monthDelta > 0 ? '+' : ''}{monthDelta.toFixed(1)}% vs last month
                 </p>
               </div>
-            )}
-            {monthDelta === null && lastMonthTotal === 0 && (
+            ) : (
               <p className="text-xs text-[#6B6B6B]">No data for {getMonthName(prevMonth)}</p>
             )}
           </div>
 
-          {/* Weekly Comparison */}
-          <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+          <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
             <p className="text-xs text-[#6B6B6B] mb-3 uppercase tracking-wider">Week over Week</p>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
@@ -195,7 +189,7 @@ export function Insights() {
                 <p className="text-xl font-bold text-white">{formatCurrency(thisWeekTotal, settings.currency)}</p>
               </div>
             </div>
-            {weekDelta !== null && (
+            {weekDelta !== null ? (
               <div className={`flex items-center gap-2 p-3 rounded-xl ${
                 weekDelta > 0 ? 'bg-red-500/10' : weekDelta < 0 ? 'bg-emerald-500/10' : 'bg-white/5'
               }`}>
@@ -211,13 +205,11 @@ export function Insights() {
                   {weekDelta > 0 ? '+' : ''}{weekDelta.toFixed(1)}% vs last week
                 </p>
               </div>
-            )}
-            {weekDelta === null && lastWeekTotal === 0 && (
+            ) : (
               <p className="text-xs text-[#6B6B6B]">No data for last week</p>
             )}
           </div>
 
-          {/* Side-by-side bar chart */}
           {(thisMonthTotal > 0 || lastMonthTotal > 0) && (
             <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
               <p className="text-xs text-[#6B6B6B] mb-3 uppercase tracking-wider">Monthly Comparison</p>
@@ -225,8 +217,8 @@ export function Insights() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={[
-                      { name: getMonthName(prevMonth).slice(0, 3), amount: lastMonthTotal, fill: '#374151' },
-                      { name: getMonthName(currentMonth).slice(0, 3), amount: thisMonthTotal, fill: '#6366F1' },
+                      { name: getMonthName(prevMonth).slice(0, 3), amount: lastMonthTotal },
+                      { name: getMonthName(currentMonth).slice(0, 3), amount: thisMonthTotal },
                     ]}
                     barSize={40}
                   >
@@ -237,9 +229,8 @@ export function Insights() {
                       formatter={(value: number) => [formatCurrency(value, settings.currency), 'Spent']}
                     />
                     <Bar dataKey="amount" radius={[8, 8, 0, 0]}>
-                      {[{ fill: '#374151' }, { fill: '#6366F1' }].map((entry, index) => (
-                        <Cell key={index} fill={entry.fill} />
-                      ))}
+                      <Cell fill="#374151" />
+                      <Cell fill="#6366F1" />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -260,17 +251,15 @@ export function Insights() {
             </div>
           ) : (
             <>
-              {/* Total */}
-              <div className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/5">
+              <div className="bg-[#1A1A1A] rounded-2xl p-5 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
                 <p className="text-xs text-[#6B6B6B] mb-1">
                   {view === 'month' ? 'This month' : 'This week'}
                 </p>
                 <p className="text-3xl font-bold text-white">{formatCurrency(total, settings.currency)}</p>
               </div>
 
-              {/* Category Breakdown */}
               {categoryData.length > 0 && (
-                <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+                <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
                   <h2 className="text-sm font-semibold text-white mb-4">By Category</h2>
                   <div className="h-44 mb-4">
                     <ResponsiveContainer width="100%" height="100%">
@@ -317,7 +306,6 @@ export function Insights() {
                 </div>
               )}
 
-              {/* Daily Spending Chart */}
               {dailyData.length > 1 && (
                 <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
                   <h2 className="text-sm font-semibold text-white mb-4">Daily Spending</h2>
@@ -337,7 +325,6 @@ export function Insights() {
                 </div>
               )}
 
-              {/* Highlights */}
               <div className="grid grid-cols-2 gap-3">
                 {highestCategory && (
                   <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">

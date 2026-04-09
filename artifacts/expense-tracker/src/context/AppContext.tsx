@@ -2,7 +2,7 @@ import { createContext, useContext, ReactNode, useState, useEffect, useCallback 
 import { Expense, Category } from '../database';
 import { getExpenses, addExpense, updateExpense, deleteExpense } from '../database/expenses';
 import { getCategories, addCategory, updateCategory, deleteCategory } from '../database/categories';
-import { getAllSettings, setSetting, clearAllData, AppSettings } from '../database/settings';
+import { getAllSettings, setSetting, clearAllData, AppSettings, SETTINGS_DEFAULTS } from '../database/settings';
 
 interface AppContextValue {
   expenses: Expense[];
@@ -25,7 +25,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [settings, setSettings] = useState<AppSettings>({ monthly_budget: 2000, currency: 'USD' });
+  const [settings, setSettings] = useState<AppSettings>(SETTINGS_DEFAULTS);
   const [loading, setLoading] = useState(true);
 
   const loadAll = useCallback(async () => {
@@ -95,7 +95,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await clearAllData();
     setExpenses([]);
     setCategories([]);
-    setSettings({ monthly_budget: 2000, currency: 'USD' });
+    setSettings(SETTINGS_DEFAULTS);
     await loadAll();
   }, [loadAll]);
 

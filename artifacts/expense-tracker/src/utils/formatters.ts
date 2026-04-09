@@ -1,4 +1,12 @@
-export function formatCurrency(amount: number, currency = 'USD'): string {
+export function formatCurrency(amount: number, currency = 'INR'): string {
+  if (currency === 'INR') {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+      minimumFractionDigits: 0,
+    }).format(amount);
+  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
@@ -9,7 +17,7 @@ export function formatCurrency(amount: number, currency = 'USD'): string {
 
 export function formatDate(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('en-IN', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -18,7 +26,7 @@ export function formatDate(dateStr: string): string {
 
 export function formatDateShort(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString('en-IN', {
     month: 'short',
     day: 'numeric',
   });
@@ -33,12 +41,12 @@ export function getTodayString(): string {
 }
 
 export function getMonthName(month: number): string {
-  return new Date(2024, month, 1).toLocaleString('en-US', { month: 'long' });
+  return new Date(2024, month, 1).toLocaleString('en-IN', { month: 'long' });
 }
 
 export function getDayOfWeek(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('en-US', { weekday: 'short' });
+  return date.toLocaleDateString('en-IN', { weekday: 'short' });
 }
 
 export function isToday(dateStr: string): boolean {
