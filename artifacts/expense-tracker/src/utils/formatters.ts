@@ -15,6 +15,15 @@ export function formatCurrency(amount: number, currency = 'INR'): string {
   }).format(amount);
 }
 
+export function formatAmountRaw(raw: string, symbol: string): string {
+  if (!raw) return '';
+  const parts = raw.split('.');
+  const intPart = parseInt(parts[0] || '0', 10);
+  const formattedInt = isNaN(intPart) ? '0' : intPart.toLocaleString('en-IN');
+  if (parts.length === 2) return `${symbol}${formattedInt}.${parts[1]}`;
+  return `${symbol}${formattedInt}`;
+}
+
 export function formatDate(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00');
   return date.toLocaleDateString('en-IN', {
@@ -61,4 +70,8 @@ export function isThisWeek(dateStr: string): boolean {
   startOfWeek.setDate(today.getDate() - dayOfWeek);
   startOfWeek.setHours(0, 0, 0, 0);
   return date >= startOfWeek && date <= today;
+}
+
+export function getCurrencySymbol(currency = 'INR'): string {
+  return currency === 'INR' ? '₹' : '$';
 }

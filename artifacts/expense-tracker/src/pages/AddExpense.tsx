@@ -4,11 +4,13 @@ import { Check, ChevronLeft, ChevronDown, Clock, Delete, X } from 'lucide-react'
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { Modal, useModalClose } from '../components/Modal';
-import { getTodayString } from '../utils/formatters';
+import { AccountSheet } from '../components/AccountSheet';
+import { getTodayString, getCurrencySymbol, formatAmountRaw } from '../utils/formatters';
 import { Expense } from '../database';
 
 const RECENT_CATS_KEY = 'expense_recent_categories';
 const MAX_RECENT = 3;
+const TYPE_ICONS: Record<string, string> = { cash: '💵', bank: '🏦', savings: '💰' };
 
 function getRecentCategories(): string[] {
   try {
@@ -22,17 +24,6 @@ function saveRecentCategory(id: string) {
   const recents = getRecentCategories().filter((r) => r !== id);
   recents.unshift(id);
   localStorage.setItem(RECENT_CATS_KEY, JSON.stringify(recents.slice(0, MAX_RECENT)));
-}
-
-function formatAmountDisplay(raw: string, currencySymbol: string): string {
-  if (!raw) return '';
-  const parts = raw.split('.');
-  const intPart = parseInt(parts[0] || '0', 10);
-  const formattedInt = isNaN(intPart) ? '0' : intPart.toLocaleString('en-IN');
-  if (parts.length === 2) {
-    return `${currencySymbol}${formattedInt}.${parts[1]}`;
-  }
-  return `${currencySymbol}${formattedInt}`;
 }
 
 interface CategorySheetProps {
@@ -115,16 +106,18 @@ interface EditExpenseProps {
 }
 
 export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps) {
-  const { addExpense, updateExpense, categories, settings } = useApp();
+  const { addExpense, updateExpense, categories, accounts, settings, updateAccount, addTransaction } = useApp();
   const navigate = useNavigate();
 
   const [amount, setAmount] = useState(editingExpense ? String(editingExpense.amount) : '');
   const [categoryId, setCategoryId] = useState(editingExpense?.category || '');
+  const [accountId, setAccountId] = useState(accounts[0]?.id ?? '');
   const [date, setDate] = useState(editingExpense?.date || getTodayString());
   const [note, setNote] = useState(editingExpense?.note || '');
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showCategorySheet, setShowCategorySheet] = useState(false);
+  const [showAccountSheet, setShowAccountSheet] = useState(false);
   const [recentCategoryIds] = useState<string[]>(getRecentCategories);
 
   useEffect(() => {
@@ -133,8 +126,15 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
     }
   }, [categories, categoryId]);
 
+  useEffect(() => {
+    if (accounts.length > 0 && !accountId) {
+      setAccountId(accounts[0].id);
+    }
+  }, [accounts, accountId]);
+
   const selectedCategory = categories.find((c) => c.id === categoryId) || categories[0];
-  const currencySymbol = settings.currency === 'INR' ? '₹' : '$';
+  const selectedAccount = accounts.find((a) => a.id === accountId) ?? accounts[0];
+  const symbol = getCurrencySymbol(settings.currency);
 
   const recentCategories = recentCategoryIds
     .map((id) => categories.find((c) => c.id === id))
@@ -182,6 +182,21 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           note: note.trim(),
         });
         saveRecentCategory(categoryId);
+
+        if (accountId) {
+          const acc = accounts.find((a) => a.id === accountId);
+          if (acc) {
+            await updateAccount(accountId, { balance: acc.balance - parsed });
+          }
+          await addTransaction({
+            type: 'expense',
+            amount: parsed,
+            accountId,
+            categoryId,
+            note: note.trim(),
+            date,
+          });
+        }
       }
       setSuccess(true);
       setTimeout(() => {
@@ -191,10 +206,10 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
     } finally {
       setSaving(false);
     }
-  }, [amount, categoryId, date, note, addExpense, updateExpense, editingExpense, navigate, onDone]);
+  }, [amount, categoryId, accountId, date, note, addExpense, updateExpense, editingExpense, navigate, onDone, accounts, updateAccount, addTransaction]);
 
   const isValid = parseFloat(amount) > 0 && !!categoryId;
-  const displayAmount = formatAmountDisplay(amount, currencySymbol);
+  const displayAmount = formatAmountRaw(amount, symbol);
 
   if (success) {
     return (
@@ -230,12 +245,12 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           {displayAmount ? (
             <span className="text-5xl font-bold text-white tracking-tight">{displayAmount}</span>
           ) : (
-            <span className="text-5xl font-bold text-[#2A2A2A] tracking-tight">{currencySymbol}0</span>
+            <span className="text-5xl font-bold text-[#2A2A2A] tracking-tight">{symbol}0</span>
           )}
         </div>
       </div>
 
-      {/* Custom Numpad — system keyboard never opens */}
+      {/* Custom Numpad */}
       <div className="grid grid-cols-3 gap-2">
         {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'backspace'].map((key) => (
           <button
@@ -296,6 +311,21 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
         <ChevronDown size={16} className="text-[#6B6B6B]" />
       </button>
 
+      {/* Account Selector (for new expenses only) */}
+      {!editingExpense && accounts.length > 0 && (
+        <button
+          onPointerDown={(e) => { e.preventDefault(); setShowAccountSheet(true); }}
+          className="w-full bg-[#1A1A1A] border border-white/5 rounded-2xl p-4 flex items-center gap-3 active:bg-[#222222] transition-colors"
+        >
+          <span className="text-xl">{TYPE_ICONS[selectedAccount?.type ?? 'cash'] ?? '💳'}</span>
+          <div className="flex-1 text-left">
+            <p className="text-xs text-[#6B6B6B]">Account</p>
+            <p className="text-sm font-medium text-white">{selectedAccount?.name ?? 'Select account'}</p>
+          </div>
+          <ChevronDown size={16} className="text-[#6B6B6B]" />
+        </button>
+      )}
+
       {/* Date */}
       <div className="bg-[#1A1A1A] border border-white/5 rounded-2xl p-4">
         <label className="block text-xs text-[#6B6B6B] mb-2">Date</label>
@@ -343,6 +373,17 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           currentCategoryId={categoryId}
           onConfirm={handleSelectCategory}
           onClose={() => setShowCategorySheet(false)}
+        />
+      )}
+
+      {/* Account Bottom Sheet */}
+      {showAccountSheet && (
+        <AccountSheet
+          accounts={accounts}
+          currentAccountId={accountId}
+          currency={settings.currency}
+          onConfirm={(id) => { setAccountId(id); setShowAccountSheet(false); }}
+          onClose={() => setShowAccountSheet(false)}
         />
       )}
     </div>

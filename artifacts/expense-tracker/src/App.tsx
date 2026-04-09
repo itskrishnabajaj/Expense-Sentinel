@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { BottomNav } from './components/BottomNav';
 import { InstallPrompt } from './components/InstallPrompt';
+import { FAB } from './components/FAB';
 import { Home } from './pages/Home';
 import { AddExpense } from './pages/AddExpense';
 import { Insights } from './pages/Insights';
@@ -56,6 +57,7 @@ function AnimatedRoutes() {
           </div>
         </div>
       </main>
+      <FAB />
       <BottomNav />
       <InstallPrompt />
     </div>

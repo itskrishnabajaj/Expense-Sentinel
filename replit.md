@@ -27,18 +27,30 @@ A premium personal expense tracking Progressive Web App (PWA).
 - **Data**: 100% local-first, all data in IndexedDB, no backend
 - **PWA**: manifest.json + Workbox service worker, installable on mobile
 
+**Architecture:**
+- DB version 2 with `accounts` and `transactions` stores alongside legacy `expenses`
+- All money flows through accounts (cash/bank/savings) with balance tracking
+- FAB (bottom-right fixed button) is the primary entry point for all money actions
+- Legacy `expenses` store preserved for backward compat; new entries also write to `transactions`
+
 **Screens:**
 1. **Home** – Monthly summary, budget progress, top categories, recent expenses
-2. **Add Expense** – Custom numpad, category picker, date, note, one-tap save
+2. **Add Expense** – Custom numpad, category + account picker, date, note, one-tap save
 3. **Insights** – Pie chart + bar chart, weekly/monthly toggle, highlights
 4. **History** – All expenses grouped by date, filter by category, edit/delete
-5. **Settings** – Budget, category manager, CSV export, reset all data
+5. **Settings** – Budget, accounts manager, category manager, CSV export, reset all data
+
+**Entry Modals (via FAB):**
+- **Expense** → navigates to /add page
+- **Income** – IncomeModal: numpad, account picker, note, date → increases balance
+- **Transfer** – TransferModal: numpad, from/to account pickers → moves balance
+- **Debt** – DebtModal: Borrowed/Lent toggle, numpad, account, note, date, isOld toggle
 
 **Key files:**
-- `src/database/` – IndexedDB layer (expenses, categories, settings)
-- `src/context/AppContext.tsx` – Global state provider
-- `src/pages/` – All 5 screens
-- `src/components/` – BottomNav, BudgetProgress, CategoryIcon, InstallPrompt
+- `src/database/` – IndexedDB layer (db.ts, accounts.ts, transactions.ts, expenses.ts, categories.ts, settings.ts)
+- `src/context/AppContext.tsx` – Global state provider (accounts, transactions, expenses)
+- `src/pages/` – 5 screens
+- `src/components/` – BottomNav, FAB, Modal, AccountSheet, AccountFormModal, IncomeModal, TransferModal, DebtModal, CategoryIcon, InstallPrompt
 - `vite.config.ts` – PWA configuration with Workbox
 
 ## Key Commands

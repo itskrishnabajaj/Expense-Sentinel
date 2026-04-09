@@ -60,19 +60,11 @@ export function Home() {
   return (
     <div className="space-y-5 pb-4">
       {/* Header */}
-      <div className="flex items-center justify-between animate-fade-in">
-        <div>
-          <p className="text-xs text-[#6B6B6B] uppercase tracking-widest mb-1">
-            {getMonthName(currentMonth)} {currentYear}
-          </p>
-          <h1 className="text-2xl font-bold text-white">Overview</h1>
-        </div>
-        <Link
-          to="/add"
-          className="w-10 h-10 bg-indigo-500/15 rounded-xl flex items-center justify-center"
-        >
-          <Plus size={18} className="text-indigo-400" />
-        </Link>
+      <div className="animate-fade-in">
+        <p className="text-xs text-[#6B6B6B] uppercase tracking-widest mb-1">
+          {getMonthName(currentMonth)} {currentYear}
+        </p>
+        <h1 className="text-2xl font-bold text-white">Overview</h1>
       </div>
 
       {/* Total Spent Card */}
