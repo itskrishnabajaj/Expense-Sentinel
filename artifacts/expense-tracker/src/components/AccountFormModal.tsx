@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
+import { TapButton } from './TapButton';
 import { AccountType } from '../database';
 
 export interface AccountFormData {
@@ -40,12 +41,12 @@ function AccountFormInner({
     <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 24px 16px', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', margin: 0 }}>{title}</h2>
-        <button
-          onClick={close}
+        <TapButton
+          onTap={close}
           style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: 'none', outline: 'none', cursor: 'pointer', flexShrink: 0 }}
         >
           <X size={16} color="#6B6B6B" />
-        </button>
+        </TapButton>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -76,14 +77,14 @@ function AccountFormInner({
             {ACCOUNT_TYPES.map(({ type, label, icon }) => {
               const selected = form.type === type;
               return (
-                <button
+                <TapButton
                   key={type}
-                  onClick={() => onFormChange({ ...form, type })}
+                  onTap={() => onFormChange({ ...form, type })}
                   style={{ flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', borderRadius: '12px', border: selected ? '1px solid rgba(99,102,241,0.7)' : '1px solid rgba(255,255,255,0.08)', background: selected ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.04)', cursor: 'pointer', outline: 'none', transition: 'all 0.12s ease' }}
                 >
                   <span style={{ fontSize: '20px' }}>{icon}</span>
                   <span style={{ fontSize: '12px', fontWeight: 500, color: selected ? '#a5b4fc' : '#9CA3AF' }}>{label}</span>
-                </button>
+                </TapButton>
               );
             })}
           </div>
@@ -91,12 +92,12 @@ function AccountFormInner({
       </div>
 
       <div style={{ padding: '16px 24px 24px', flexShrink: 0, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <button
-          onClick={onSave}
+        <TapButton
+          onTap={onSave}
           style={{ width: '100%', padding: '14px', background: '#6366F1', border: 'none', outline: 'none', borderRadius: '16px', fontSize: '14px', fontWeight: 600, color: '#ffffff', cursor: 'pointer' }}
         >
           {saveLabel}
-        </button>
+        </TapButton>
       </div>
     </>
   );

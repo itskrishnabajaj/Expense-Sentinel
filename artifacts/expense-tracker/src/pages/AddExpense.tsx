@@ -5,6 +5,7 @@ import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { Modal, useModalClose } from '../components/Modal';
 import { AccountSheet } from '../components/AccountSheet';
+import { TapButton } from '../components/TapButton';
 import { getTodayString, getCurrencySymbol, formatAmountRaw } from '../utils/formatters';
 import { Expense } from '../database';
 
@@ -49,19 +50,19 @@ function CategorySheetInner({
     <>
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/5">
         <h2 className="text-base font-semibold text-white">Select Category</h2>
-        <button
-          onClick={close}
+        <TapButton
+          onTap={close}
           className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5"
         >
           <X size={16} className="text-[#6B6B6B]" />
-        </button>
+        </TapButton>
       </div>
 
       <div className="overflow-y-auto flex-1" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
         {categories.map((cat) => (
-          <button
+          <TapButton
             key={cat.id}
-            onClick={() => setPending(cat.id)}
+            onTap={() => setPending(cat.id)}
             className={`w-full flex items-center gap-4 px-6 py-4 transition-colors active:bg-white/5 border-b border-white/5 last:border-0 ${
               pending === cat.id ? 'bg-indigo-500/10' : ''
             }`}
@@ -71,18 +72,18 @@ function CategorySheetInner({
               {cat.name}
             </span>
             {pending === cat.id && <Check size={16} className="text-indigo-400 flex-shrink-0" />}
-          </button>
+          </TapButton>
         ))}
       </div>
 
       <div className="px-6 py-5 flex-shrink-0 border-t border-white/5">
-        <button
-          onClick={() => onConfirm(pending)}
+        <TapButton
+          onTap={() => onConfirm(pending)}
           disabled={!pending}
           className="w-full py-3.5 bg-indigo-500 active:bg-indigo-600 text-white text-sm font-semibold rounded-2xl disabled:opacity-40"
         >
           Confirm
-        </button>
+        </TapButton>
       </div>
     </>
   );
@@ -249,9 +250,9 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
     <div className="space-y-5 pb-4">
       {!editingExpense && (
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="p-2 -ml-2 text-[#6B6B6B]">
+          <TapButton onTap={() => navigate('/')} className="p-2 -ml-2 text-[#6B6B6B]">
             <ChevronLeft size={20} />
-          </button>
+          </TapButton>
           <h1 className="text-lg font-bold text-white">Add Expense</h1>
         </div>
       )}
@@ -274,9 +275,10 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
       {/* Custom Numpad */}
       <div className="grid grid-cols-3 gap-2">
         {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'backspace'].map((key) => (
-          <button
+          <TapButton
             key={key}
-            onClick={() => handleNumKey(key)}
+            onTap={() => handleNumKey(key)}
+            tapOptions={{ preventDefault: true }}
             className="h-14 bg-[#1A1A1A] active:bg-[#252525] rounded-2xl flex items-center justify-center border border-white/5"
           >
             {key === 'backspace' ? (
@@ -284,7 +286,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
             ) : (
               <span className="text-lg font-medium text-white">{key}</span>
             )}
-          </button>
+          </TapButton>
         ))}
       </div>
 
@@ -297,9 +299,9 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           </div>
           <div className="flex gap-2 flex-wrap">
             {recentCategories.map((cat) => (
-              <button
+              <TapButton
                 key={cat.id}
-                onClick={() => handleSelectCategory(cat.id)}
+                onTap={() => handleSelectCategory(cat.id)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all ${
                   categoryId === cat.id
                     ? 'border-indigo-500/50 bg-indigo-500/10'
@@ -308,15 +310,15 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
               >
                 <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
                 <span className="text-xs text-white">{cat.name}</span>
-              </button>
+              </TapButton>
             ))}
           </div>
         </div>
       )}
 
       {/* Category Selector */}
-      <button
-        onClick={() => setShowCategorySheet(true)}
+      <TapButton
+        onTap={() => setShowCategorySheet(true)}
         className="w-full bg-[#1A1A1A] border border-white/5 rounded-2xl p-4 flex items-center gap-3 active:bg-[#222222] transition-colors"
       >
         {selectedCategory && (
@@ -327,12 +329,12 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           <p className="text-sm font-medium text-white">{selectedCategory?.name || 'Select category'}</p>
         </div>
         <ChevronDown size={16} className="text-[#6B6B6B]" />
-      </button>
+      </TapButton>
 
       {/* Account Selector (for new expenses only) */}
       {!editingExpense && accounts.length > 0 && (
-        <button
-          onClick={() => setShowAccountSheet(true)}
+        <TapButton
+          onTap={() => setShowAccountSheet(true)}
           className="w-full bg-[#1A1A1A] border border-white/5 rounded-2xl p-4 flex items-center gap-3 active:bg-[#222222] transition-colors"
         >
           <span className="text-xl">{TYPE_ICONS[selectedAccount?.type ?? 'cash'] ?? '💳'}</span>
@@ -341,7 +343,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
             <p className="text-sm font-medium text-white">{selectedAccount?.name ?? 'Select account'}</p>
           </div>
           <ChevronDown size={16} className="text-[#6B6B6B]" />
-        </button>
+        </TapButton>
       )}
 
       {/* Date */}
@@ -372,8 +374,8 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
       </div>
 
       {/* Save Button */}
-      <button
-        onClick={handleSave}
+      <TapButton
+        onTap={handleSave}
         disabled={!isValid || saving}
         className={`w-full py-4 rounded-2xl text-sm font-semibold transition-all duration-200 ${
           isValid && !saving
@@ -382,7 +384,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
         }`}
       >
         {saving ? 'Saving…' : editingExpense ? 'Update Expense' : 'Save Expense'}
-      </button>
+      </TapButton>
 
       {/* Category Bottom Sheet */}
       {showCategorySheet && (

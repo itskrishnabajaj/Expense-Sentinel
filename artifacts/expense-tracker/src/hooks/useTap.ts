@@ -3,14 +3,28 @@ import React from 'react';
 
 const MOVE_THRESHOLD_SQ = 8 * 8;
 
-export function useTap(handler: () => void) {
+export interface UseTapOptions {
+  preventDefault?: boolean;
+  stopPropagation?: boolean;
+}
+
+export function useTap(handler: () => void, options?: UseTapOptions) {
   const handlerRef = useRef(handler);
   handlerRef.current = handler;
 
   const startRef = useRef<{ x: number; y: number } | null>(null);
   const movedRef = useRef(false);
+  const preventDefaultRef = useRef(options?.preventDefault ?? false);
+  preventDefaultRef.current = options?.preventDefault ?? false;
+  const stopPropRef = useRef(options?.stopPropagation ?? false);
+  stopPropRef.current = options?.stopPropagation ?? false;
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
+    if (stopPropRef.current) e.stopPropagation();
+    if (preventDefaultRef.current) {
+      e.preventDefault();
+      (e.target as Element).setPointerCapture?.(e.pointerId);
+    }
     startRef.current = { x: e.clientX, y: e.clientY };
     movedRef.current = false;
   }, []);

@@ -1,6 +1,7 @@
 import { Check, X } from 'lucide-react';
 import { useState } from 'react';
 import { Modal, useModalClose } from './Modal';
+import { TapButton } from './TapButton';
 import { Account } from '../database';
 import { formatCurrency } from '../utils/formatters';
 
@@ -30,21 +31,21 @@ function AccountSheetInner({
     <>
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/5">
         <h2 className="text-base font-semibold text-white">{title}</h2>
-        <button
-          onClick={close}
+        <TapButton
+          onTap={close}
           className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5"
         >
           <X size={16} className="text-[#6B6B6B]" />
-        </button>
+        </TapButton>
       </div>
 
       <div className="overflow-y-auto flex-1" style={{ overscrollBehavior: 'contain' }}>
         {accounts.map((acc) => {
           const selected = pending === acc.id;
           return (
-            <button
+            <TapButton
               key={acc.id}
-              onClick={() => setPending(acc.id)}
+              onTap={() => setPending(acc.id)}
               className={`w-full flex items-center gap-4 px-6 py-4 transition-colors active:bg-white/5 border-b border-white/5 last:border-0 ${selected ? 'bg-indigo-500/10' : ''}`}
             >
               <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0" style={{ background: 'rgba(255,255,255,0.06)' }}>
@@ -58,19 +59,19 @@ function AccountSheetInner({
                 <span className="text-sm font-semibold text-[#A0A0A0]">{formatCurrency(acc.balance, currency)}</span>
                 {selected && <Check size={16} className="text-indigo-400" />}
               </div>
-            </button>
+            </TapButton>
           );
         })}
       </div>
 
       <div className="px-6 py-5 flex-shrink-0 border-t border-white/5">
-        <button
-          onClick={() => onConfirm(pending)}
+        <TapButton
+          onTap={() => onConfirm(pending)}
           disabled={!pending}
           className="w-full py-3.5 bg-indigo-500 active:bg-indigo-600 text-white text-sm font-semibold rounded-2xl disabled:opacity-40"
         >
           Confirm
-        </button>
+        </TapButton>
       </div>
     </>
   );

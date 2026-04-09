@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { X, ChevronDown, Delete, Check } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
 import { AccountSheet } from './AccountSheet';
+import { TapButton } from './TapButton';
 import { useApp } from '../context/AppContext';
 import { getTodayString, formatAmountRaw, getCurrencySymbol } from '../utils/formatters';
 
@@ -87,17 +88,17 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
     <>
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/5">
         <h2 className="text-base font-semibold text-white">Record Debt</h2>
-        <button onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5">
+        <TapButton onTap={close} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5">
           <X size={16} className="text-[#6B6B6B]" />
-        </button>
+        </TapButton>
       </div>
 
       <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ overscrollBehavior: 'contain' }}>
         <div className="grid grid-cols-2 gap-2">
           {(['taken', 'given'] as const).map((t) => (
-            <button
+            <TapButton
               key={t}
-              onClick={() => setDebtType(t)}
+              onTap={() => setDebtType(t)}
               className={`py-3 rounded-xl text-sm font-semibold border transition-all ${
                 debtType === t
                   ? t === 'taken'
@@ -107,7 +108,7 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
               }`}
             >
               {t === 'taken' ? '⬇ Borrowed' : '⬆ Lent'}
-            </button>
+            </TapButton>
           ))}
         </div>
 
@@ -124,18 +125,19 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
 
         <div className="grid grid-cols-3 gap-1.5">
           {NUMPAD_KEYS.map((key) => (
-            <button
+            <TapButton
               key={key}
-              onClick={() => handleNumKey(key)}
+              onTap={() => handleNumKey(key)}
+              tapOptions={{ preventDefault: true }}
               className="h-12 bg-[#111111] active:bg-[#1E1E1E] rounded-xl flex items-center justify-center border border-white/5"
             >
               {key === 'backspace' ? <Delete size={16} className="text-[#A0A0A0]" /> : <span className="text-base font-medium text-white">{key}</span>}
-            </button>
+            </TapButton>
           ))}
         </div>
 
-        <button
-          onClick={() => setShowAccountSheet(true)}
+        <TapButton
+          onTap={() => setShowAccountSheet(true)}
           className="w-full bg-[#111111] border border-white/5 rounded-xl p-3.5 flex items-center gap-3 active:bg-[#1A1A1A]"
         >
           <span className="text-lg">{TYPE_ICONS[selectedAccount?.type ?? 'cash'] ?? '💳'}</span>
@@ -144,7 +146,7 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
             <p className="text-sm font-medium text-white">{selectedAccount?.name ?? 'Select account'}</p>
           </div>
           <ChevronDown size={16} className="text-[#6B6B6B]" />
-        </button>
+        </TapButton>
 
         <div className="bg-[#111111] border border-white/5 rounded-xl p-3.5">
           <label className="block text-xs text-[#6B6B6B] mb-1.5">Note (optional)</label>
@@ -171,8 +173,8 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
           />
         </div>
 
-        <button
-          onClick={() => setIsOld(!isOld)}
+        <TapButton
+          onTap={() => setIsOld(!isOld)}
           className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${
             isOld ? 'bg-amber-500/10 border-amber-500/30' : 'bg-[#111111] border-white/5'
           }`}
@@ -184,19 +186,19 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
           <div className={`w-10 h-5.5 rounded-full transition-all relative ${isOld ? 'bg-amber-500' : 'bg-[#333]'}`} style={{ minWidth: 40, height: 22 }}>
             <div className="absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white transition-all" style={{ width: 18, height: 18, top: 2, left: isOld ? 20 : 2, transition: 'left 0.15s ease' }} />
           </div>
-        </button>
+        </TapButton>
       </div>
 
       <div className="px-5 py-4 flex-shrink-0 border-t border-white/5">
-        <button
-          onClick={handleSave}
+        <TapButton
+          onTap={handleSave}
           disabled={!isValid || saving}
           className={`w-full py-3.5 rounded-2xl text-sm font-semibold transition-all ${
             isValid && !saving ? 'bg-amber-500 active:bg-amber-600 text-white' : 'bg-[#111111] text-[#444] border border-white/5 cursor-not-allowed'
           }`}
         >
           {saving ? 'Saving…' : 'Record Debt'}
-        </button>
+        </TapButton>
       </div>
 
       {showAccountSheet && (

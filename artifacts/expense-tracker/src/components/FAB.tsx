@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { IncomeModal } from './IncomeModal';
 import { TransferModal } from './TransferModal';
 import { DebtModal } from './DebtModal';
+import { TapButton } from './TapButton';
 import { useTap } from '../hooks/useTap';
 
 type ModalType = 'income' | 'transfer' | 'debt' | null;
@@ -11,12 +12,12 @@ type ModalType = 'income' | 'transfer' | 'debt' | null;
 interface ActionButtonProps {
   label: string;
   icon: React.ReactNode;
-  onClick: () => void;
+  onTap: () => void;
   index: number;
   isVisible: boolean;
 }
 
-function ActionButton({ label, icon, onClick, index, isVisible }: ActionButtonProps) {
+function ActionButton({ label, icon, onTap, index, isVisible }: ActionButtonProps) {
   return (
     <div
       style={{
@@ -44,8 +45,8 @@ function ActionButton({ label, icon, onClick, index, isVisible }: ActionButtonPr
       >
         {label}
       </span>
-      <button
-        onClick={onClick}
+      <TapButton
+        onTap={onTap}
         style={{
           width: 44,
           height: 44,
@@ -62,7 +63,7 @@ function ActionButton({ label, icon, onClick, index, isVisible }: ActionButtonPr
         }}
       >
         {icon}
-      </button>
+      </TapButton>
     </div>
   );
 }
@@ -121,14 +122,14 @@ export function FAB() {
             key={label}
             label={label}
             icon={icon}
-            onClick={() => handleAction(modal)}
+            onTap={() => handleAction(modal)}
             index={i}
             isVisible={open}
           />
         ))}
 
-        <button
-          onClick={() => setOpen((v) => !v)}
+        <TapButton
+          onTap={() => setOpen((v) => !v)}
           style={{
             width: 56,
             height: 56,
@@ -153,7 +154,7 @@ export function FAB() {
               transition: 'transform 0.22s cubic-bezier(0.34,1.56,0.64,1)',
             }}
           />
-        </button>
+        </TapButton>
       </div>
 
       {activeModal === 'income' && <IncomeModal onClose={closeModal} />}

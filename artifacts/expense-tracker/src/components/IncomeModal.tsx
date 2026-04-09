@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { X, ChevronDown, Delete, Check } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
 import { AccountSheet } from './AccountSheet';
+import { TapButton } from './TapButton';
 import { useApp } from '../context/AppContext';
 import { getTodayString, formatAmountRaw, getCurrencySymbol } from '../utils/formatters';
 
@@ -77,9 +78,9 @@ function IncomeInner({ onCloseClean }: { onCloseClean: () => void }) {
     <>
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/5">
         <h2 className="text-base font-semibold text-white">Add Income</h2>
-        <button onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5">
+        <TapButton onTap={close} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5">
           <X size={16} className="text-[#6B6B6B]" />
-        </button>
+        </TapButton>
       </div>
 
       <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ overscrollBehavior: 'contain' }}>
@@ -96,18 +97,19 @@ function IncomeInner({ onCloseClean }: { onCloseClean: () => void }) {
 
         <div className="grid grid-cols-3 gap-1.5">
           {NUMPAD_KEYS.map((key) => (
-            <button
+            <TapButton
               key={key}
-              onClick={() => handleNumKey(key)}
+              onTap={() => handleNumKey(key)}
+              tapOptions={{ preventDefault: true }}
               className="h-12 bg-[#111111] active:bg-[#1E1E1E] rounded-xl flex items-center justify-center border border-white/5"
             >
               {key === 'backspace' ? <Delete size={16} className="text-[#A0A0A0]" /> : <span className="text-base font-medium text-white">{key}</span>}
-            </button>
+            </TapButton>
           ))}
         </div>
 
-        <button
-          onClick={() => setShowAccountSheet(true)}
+        <TapButton
+          onTap={() => setShowAccountSheet(true)}
           className="w-full bg-[#111111] border border-white/5 rounded-xl p-3.5 flex items-center gap-3 active:bg-[#1A1A1A]"
         >
           <span className="text-lg">{TYPE_ICONS[selectedAccount?.type ?? 'cash'] ?? '💳'}</span>
@@ -116,7 +118,7 @@ function IncomeInner({ onCloseClean }: { onCloseClean: () => void }) {
             <p className="text-sm font-medium text-white">{selectedAccount?.name ?? 'Select account'}</p>
           </div>
           <ChevronDown size={16} className="text-[#6B6B6B]" />
-        </button>
+        </TapButton>
 
         <div className="bg-[#111111] border border-white/5 rounded-xl p-3.5">
           <label className="block text-xs text-[#6B6B6B] mb-1.5">Note (optional)</label>
@@ -145,15 +147,15 @@ function IncomeInner({ onCloseClean }: { onCloseClean: () => void }) {
       </div>
 
       <div className="px-5 py-4 flex-shrink-0 border-t border-white/5">
-        <button
-          onClick={handleSave}
+        <TapButton
+          onTap={handleSave}
           disabled={!isValid || saving}
           className={`w-full py-3.5 rounded-2xl text-sm font-semibold transition-all ${
             isValid && !saving ? 'bg-emerald-500 active:bg-emerald-600 text-white' : 'bg-[#111111] text-[#444] border border-white/5 cursor-not-allowed'
           }`}
         >
           {saving ? 'Saving…' : 'Add Income'}
-        </button>
+        </TapButton>
       </div>
 
       {showAccountSheet && (

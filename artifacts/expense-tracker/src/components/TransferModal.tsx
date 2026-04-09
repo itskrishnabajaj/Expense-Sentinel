@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { X, ChevronDown, Delete, Check, ArrowDown } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
 import { AccountSheet } from './AccountSheet';
+import { TapButton } from './TapButton';
 import { useApp } from '../context/AppContext';
 import { formatAmountRaw, getCurrencySymbol, formatCurrency, getTodayString } from '../utils/formatters';
 
@@ -92,9 +93,9 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
     <>
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/5">
         <h2 className="text-base font-semibold text-white">Transfer</h2>
-        <button onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5">
+        <TapButton onTap={close} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5">
           <X size={16} className="text-[#6B6B6B]" />
-        </button>
+        </TapButton>
       </div>
 
       <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ overscrollBehavior: 'contain' }}>
@@ -111,19 +112,20 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
 
         <div className="grid grid-cols-3 gap-1.5">
           {NUMPAD_KEYS.map((key) => (
-            <button
+            <TapButton
               key={key}
-              onClick={() => handleNumKey(key)}
+              onTap={() => handleNumKey(key)}
+              tapOptions={{ preventDefault: true }}
               className="h-12 bg-[#111111] active:bg-[#1E1E1E] rounded-xl flex items-center justify-center border border-white/5"
             >
               {key === 'backspace' ? <Delete size={16} className="text-[#A0A0A0]" /> : <span className="text-base font-medium text-white">{key}</span>}
-            </button>
+            </TapButton>
           ))}
         </div>
 
         <div className="space-y-1">
-          <button
-            onClick={() => setShowFromSheet(true)}
+          <TapButton
+            onTap={() => setShowFromSheet(true)}
             className="w-full bg-[#111111] border border-white/5 rounded-xl p-3.5 flex items-center gap-3 active:bg-[#1A1A1A]"
           >
             <span className="text-lg">{TYPE_ICONS[fromAccount?.type ?? 'cash'] ?? '💳'}</span>
@@ -132,7 +134,7 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
               <p className="text-sm font-medium text-white">{fromAccount?.name ?? 'Select account'}</p>
             </div>
             <ChevronDown size={16} className="text-[#6B6B6B]" />
-          </button>
+          </TapButton>
 
           <div className="flex justify-center py-0.5">
             <div className="w-7 h-7 rounded-full bg-[#1A1A1A] border border-white/5 flex items-center justify-center">
@@ -140,8 +142,8 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
             </div>
           </div>
 
-          <button
-            onClick={() => setShowToSheet(true)}
+          <TapButton
+            onTap={() => setShowToSheet(true)}
             className="w-full bg-[#111111] border border-white/5 rounded-xl p-3.5 flex items-center gap-3 active:bg-[#1A1A1A]"
           >
             <span className="text-lg">{TYPE_ICONS[toAccount?.type ?? 'cash'] ?? '💳'}</span>
@@ -150,7 +152,7 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
               <p className="text-sm font-medium text-white">{toAccount?.name ?? 'Select account'}</p>
             </div>
             <ChevronDown size={16} className="text-[#6B6B6B]" />
-          </button>
+          </TapButton>
         </div>
 
         {fromId === toId && fromId && (
@@ -187,15 +189,15 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
       </div>
 
       <div className="px-5 py-4 flex-shrink-0 border-t border-white/5">
-        <button
-          onClick={handleSave}
+        <TapButton
+          onTap={handleSave}
           disabled={!isValid || saving}
           className={`w-full py-3.5 rounded-2xl text-sm font-semibold transition-all ${
             isValid && !saving ? 'bg-blue-500 active:bg-blue-600 text-white' : 'bg-[#111111] text-[#444] border border-white/5 cursor-not-allowed'
           }`}
         >
           {saving ? 'Transferring…' : 'Transfer'}
-        </button>
+        </TapButton>
       </div>
 
       {showFromSheet && (

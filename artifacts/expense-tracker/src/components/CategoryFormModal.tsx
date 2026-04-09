@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
+import { TapButton } from './TapButton';
 
 export const CATEGORY_ICONS = [
   '🍽️', '🚗', '🛍️', '🎬', '💊', '⚡', '✈️', '📚',
@@ -60,8 +61,8 @@ function CategoryFormInner({
         <h2 style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
           {title}
         </h2>
-        <button
-          onClick={close}
+        <TapButton
+          onTap={close}
           style={{
             width: 32,
             height: 32,
@@ -77,7 +78,7 @@ function CategoryFormInner({
           }}
         >
           <X size={16} color="#6B6B6B" />
-        </button>
+        </TapButton>
       </div>
 
       <div
@@ -145,9 +146,9 @@ function CategoryFormInner({
           </label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {CATEGORY_ICONS.map((icon) => (
-              <button
+              <TapButton
                 key={icon}
-                onClick={() => onFormChange({ ...form, icon })}
+                onTap={() => onFormChange({ ...form, icon })}
                 style={{
                   width: 40,
                   height: 40,
@@ -164,7 +165,7 @@ function CategoryFormInner({
                 }}
               >
                 {icon}
-              </button>
+              </TapButton>
             ))}
           </div>
         </div>
@@ -184,9 +185,9 @@ function CategoryFormInner({
           </label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {CATEGORY_COLORS.map((color) => (
-              <button
+              <TapButton
                 key={color}
-                onClick={() => onFormChange({ ...form, color })}
+                onTap={() => onFormChange({ ...form, color })}
                 style={{
                   width: 36,
                   height: 36,
@@ -211,8 +212,8 @@ function CategoryFormInner({
           borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <button
-          onClick={onSave}
+        <TapButton
+          onTap={onSave}
           style={{
             width: '100%',
             padding: '14px',
@@ -227,7 +228,7 @@ function CategoryFormInner({
           }}
         >
           {saveLabel}
-        </button>
+        </TapButton>
       </div>
     </>
   );
