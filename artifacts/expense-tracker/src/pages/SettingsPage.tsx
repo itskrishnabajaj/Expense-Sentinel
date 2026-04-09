@@ -39,6 +39,14 @@ export function SettingsPage() {
     setBudgetInput(String(settings.monthly_budget));
   }, [settings.monthly_budget]);
 
+  useEffect(() => {
+    const main = document.querySelector('main');
+    const isOpen = showAddCategory || !!editingCategory;
+    if (isOpen) main?.classList.add('overflow-hidden');
+    else main?.classList.remove('overflow-hidden');
+    return () => main?.classList.remove('overflow-hidden');
+  }, [showAddCategory, editingCategory]);
+
   const handleSaveBudget = async () => {
     const val = parseFloat(budgetInput);
     if (isNaN(val) || val <= 0) return;
@@ -96,32 +104,30 @@ export function SettingsPage() {
 
       {/* Budget */}
       <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
-        <h2 className="text-sm font-semibold text-white mb-4">Monthly Budget</h2>
-        <div className="flex gap-3">
-          <div className="flex-1 bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-3 flex items-center gap-2">
-            <span className="text-[#6B6B6B] text-sm">₹</span>
-            <input
-              type="number"
-              value={budgetInput}
-              onChange={(e) => setBudgetInput(e.target.value)}
-              className="flex-1 bg-transparent text-white text-sm outline-none"
-              placeholder="20000"
-              min="0"
-              step="1000"
-              style={{ userSelect: 'text', touchAction: 'auto' }}
-            />
-          </div>
-          <button
-            onClick={handleSaveBudget}
-            className={`px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-              budgetSaved
-                ? 'bg-emerald-500/15 text-emerald-400'
-                : 'bg-indigo-500 text-white'
-            }`}
-          >
-            {budgetSaved ? <><Check size={14} /> Saved</> : 'Save'}
-          </button>
+        <h2 className="text-sm font-semibold text-white mb-3">Monthly Budget</h2>
+        <div className="bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-3 flex items-center gap-2">
+          <span className="text-[#6B6B6B] text-sm">₹</span>
+          <input
+            type="number"
+            value={budgetInput}
+            onChange={(e) => setBudgetInput(e.target.value)}
+            className="flex-1 bg-transparent text-white text-sm outline-none"
+            placeholder="20000"
+            min="0"
+            step="1000"
+            style={{ userSelect: 'text', touchAction: 'auto' }}
+          />
         </div>
+        <button
+          onClick={handleSaveBudget}
+          className={`mt-3 w-full py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
+            budgetSaved
+              ? 'bg-emerald-500/15 text-emerald-400'
+              : 'bg-indigo-500 text-white'
+          }`}
+        >
+          {budgetSaved ? <><Check size={14} /> Saved</> : 'Save'}
+        </button>
       </div>
 
       {/* Categories */}
@@ -227,9 +233,9 @@ export function SettingsPage() {
 
       {/* Add/Edit Category Modal */}
       {(showAddCategory || editingCategory) && (
-        <div className="fixed inset-0 z-50 flex items-end">
+        <div className="fixed inset-0 z-50 flex items-end outline-none" tabIndex={-1}>
           <div className="absolute inset-0 bg-black/60 animate-fade-overlay" onClick={() => { setShowAddCategory(false); setEditingCategory(null); setCategoryNameError(false); }} />
-          <div className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-10 max-h-[85vh] overflow-y-auto scroll-native animate-slide-up">
+          <div className="relative w-full bg-[#111111] rounded-t-3xl p-6 pb-10 max-h-[85vh] overflow-y-auto scroll-native overscroll-contain animate-slide-up">
             <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-6" />
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-semibold text-white">
@@ -250,7 +256,6 @@ export function SettingsPage() {
                 className={`w-full bg-[#1A1A1A] border rounded-xl px-4 py-3 text-sm text-white outline-none placeholder:text-[#444444] ${
                   categoryNameError ? 'border-red-500/60' : 'border-white/10 focus:border-indigo-500/50'
                 }`}
-                autoFocus
                 style={{ userSelect: 'text', touchAction: 'auto' }}
               />
               {categoryNameError && (

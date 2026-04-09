@@ -56,20 +56,19 @@ function CategorySheet({ categories, currentCategoryId, onConfirm, onClose }: Ca
       >
         <div className="w-10 h-1 bg-white/10 rounded-full mx-auto mb-5 flex-shrink-0" />
         <h2 className="text-base font-semibold text-white mb-4 flex-shrink-0">Select Category</h2>
-        <div className="overflow-y-auto scroll-native flex-1">
-          <div className="grid grid-cols-3 gap-2">
+        <div className="overflow-y-auto scroll-native flex-1 -mx-2">
+          <div className="divide-y divide-white/5">
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onPointerDown={(e) => { e.stopPropagation(); setPending(cat.id); }}
-                className={`aspect-square flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border transition-all active:opacity-70 ${
-                  pending === cat.id
-                    ? 'border-indigo-500/60 bg-indigo-500/12'
-                    : 'border-white/5 bg-[#1A1A1A]'
+                className={`w-full flex items-center gap-3 py-3.5 px-2 transition-colors active:bg-white/5 ${
+                  pending === cat.id ? 'text-indigo-400' : 'text-white'
                 }`}
               >
-                <span className="text-2xl leading-none">{cat.icon}</span>
-                <span className="text-[11px] text-white leading-tight truncate w-full text-center">{cat.name}</span>
+                <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
+                <span className="flex-1 text-sm text-left">{cat.name}</span>
+                {pending === cat.id && <Check size={16} className="text-indigo-400 flex-shrink-0" />}
               </button>
             ))}
           </div>

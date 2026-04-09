@@ -39,7 +39,7 @@ function AnimatedRoutes() {
   return (
     <div className="h-full bg-[#0D0D0D] text-white flex flex-col">
       <main className="flex-1 scroll-native safe-area-top">
-        <div className="max-w-lg mx-auto px-4 pt-8 pb-6">
+        <div className="max-w-lg mx-auto px-4 pt-8 pb-6 min-h-full">
           <div key={location.pathname} className="animate-fade-in">
             <Routes location={location}>
               <Route path="/" element={<Home />} />
