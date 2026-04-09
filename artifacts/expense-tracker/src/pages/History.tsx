@@ -143,7 +143,7 @@ export function History() {
                     return (
                       <div
                         key={expense.id}
-                        className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 flex items-center gap-3 group"
+                        className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 flex items-center gap-3"
                       >
                         <CategoryIcon icon={cat.icon} color={cat.color} size="md" />
                         <div className="flex-1 min-w-0">
@@ -152,25 +152,25 @@ export function History() {
                           </p>
                           <p className="text-xs text-[#6B6B6B] mt-0.5">{cat.name}</p>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           <p className="text-sm font-semibold text-white">
                             -{formatCurrency(expense.amount, settings.currency)}
                           </p>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => setEditingExpense(expense)}
-                              className="p-1.5 text-[#6B6B6B] hover:text-white transition-colors rounded-lg hover:bg-white/5"
-                            >
-                              <Pencil size={13} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(expense.id)}
-                              disabled={deletingId === expense.id}
-                              className="p-1.5 text-[#6B6B6B] hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => setEditingExpense(expense)}
+                            className="p-1.5 text-[#6B6B6B] hover:text-white active:text-white transition-colors rounded-lg hover:bg-white/5 flex-shrink-0"
+                            aria-label="Edit expense"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(expense.id)}
+                            disabled={deletingId === expense.id}
+                            className="p-1.5 text-[#6B6B6B] hover:text-red-400 active:text-red-400 transition-colors rounded-lg hover:bg-red-500/10 flex-shrink-0"
+                            aria-label="Delete expense"
+                          >
+                            <Trash2 size={13} />
+                          </button>
                         </div>
                       </div>
                     );

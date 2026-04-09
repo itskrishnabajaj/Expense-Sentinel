@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Download,
   Trash2,
@@ -26,6 +26,10 @@ export function SettingsPage() {
   const { settings, categories, updateSetting, addCategory, updateCategory, deleteCategory, clearAll, expenses } = useApp();
 
   const [budgetInput, setBudgetInput] = useState(String(settings.monthly_budget));
+
+  useEffect(() => {
+    setBudgetInput(String(settings.monthly_budget));
+  }, [settings.monthly_budget]);
   const [budgetSaved, setBudgetSaved] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
