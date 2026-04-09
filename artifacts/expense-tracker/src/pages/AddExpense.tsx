@@ -25,17 +25,13 @@ function saveRecentCategory(id: string) {
 
 function formatAmountDisplay(raw: string, currencySymbol: string): string {
   if (!raw) return '';
-  const isDecimalPending = raw.endsWith('.');
-  const num = parseFloat(raw);
-  if (isNaN(num)) return raw;
-  if (isDecimalPending) {
-    return `${currencySymbol}${num.toLocaleString('en-IN')}. `;
-  }
   const parts = raw.split('.');
-  if (parts[1] !== undefined) {
-    return `${currencySymbol}${parseInt(parts[0], 10).toLocaleString('en-IN')}.${parts[1]}`;
+  const intPart = parseInt(parts[0] || '0', 10);
+  const formattedInt = isNaN(intPart) ? '0' : intPart.toLocaleString('en-IN');
+  if (parts.length === 2) {
+    return `${currencySymbol}${formattedInt}.${parts[1]}`;
   }
-  return `${currencySymbol}${num.toLocaleString('en-IN')}`;
+  return `${currencySymbol}${formattedInt}`;
 }
 
 interface EditExpenseProps {
