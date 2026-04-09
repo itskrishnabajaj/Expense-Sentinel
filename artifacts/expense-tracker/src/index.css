@@ -19,7 +19,6 @@
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
     user-select: none;
-    touch-action: manipulation;
   }
 
   html {
@@ -163,10 +162,12 @@ button:not(:disabled):active {
 }
 
 button {
+  touch-action: manipulation;
   transition: transform 0.08s ease, background-color 0.12s ease, color 0.12s ease, opacity 0.12s ease, border-color 0.12s ease;
 }
 
 a {
+  touch-action: manipulation;
   transition: color 0.12s ease, opacity 0.12s ease;
 }
 

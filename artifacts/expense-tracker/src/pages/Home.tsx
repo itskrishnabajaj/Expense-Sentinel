@@ -105,7 +105,7 @@ const AccountsStrip = memo(function AccountsStrip({
     <div className="-mx-4">
       <div
         className="flex gap-3 px-4 overflow-x-auto"
-        style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+        style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
       >
         {accounts.map((acc) => (
           <div

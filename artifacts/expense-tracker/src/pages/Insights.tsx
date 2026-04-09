@@ -282,7 +282,7 @@ export function Insights() {
           {(thisMonthTotal > 0 || lastMonthTotal > 0) && (
             <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
               <p className="text-xs text-[#6B6B6B] mb-3 uppercase tracking-wider">Monthly Comparison</p>
-              <div className="h-36">
+              <div className="h-36" style={{ touchAction: 'pan-y' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={[
@@ -343,7 +343,7 @@ export function Insights() {
                   {categoryData.length > 0 && (
                     <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
                       <h2 className="text-sm font-semibold text-white mb-4">Expenses by Category</h2>
-                      <div className="h-44 mb-4">
+                      <div className="h-44 mb-4" style={{ touchAction: 'pan-y' }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -391,7 +391,7 @@ export function Insights() {
                   {dailyData.length > 1 && (
                     <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
                       <h2 className="text-sm font-semibold text-white mb-4">Daily Spending</h2>
-                      <div className="h-40">
+                      <div className="h-40" style={{ touchAction: 'pan-y' }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={dailyData} barSize={20}>
                             <XAxis dataKey="date" tick={{ fill: '#6B6B6B', fontSize: 10 }} axisLine={false} tickLine={false} />
