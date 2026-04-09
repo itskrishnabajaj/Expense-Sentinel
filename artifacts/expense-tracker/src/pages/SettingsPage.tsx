@@ -40,11 +40,10 @@ export function SettingsPage() {
   }, [settings.monthly_budget]);
 
   useEffect(() => {
-    const main = document.querySelector('main');
+    const main = document.querySelector('main') as HTMLElement | null;
     const isOpen = showAddCategory || !!editingCategory;
-    if (isOpen) main?.classList.add('overflow-hidden');
-    else main?.classList.remove('overflow-hidden');
-    return () => main?.classList.remove('overflow-hidden');
+    if (main) main.style.overflow = isOpen ? 'hidden' : '';
+    return () => { if (main) main.style.overflow = ''; };
   }, [showAddCategory, editingCategory]);
 
   const handleSaveBudget = async () => {
