@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { X, ChevronDown, Delete, Check, AlertTriangle } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
 import { AccountSheet } from './AccountSheet';
@@ -53,61 +53,78 @@ function EditDebtInner({
     });
   }, []);
 
+  const financialFieldsChanged = useMemo(() => {
+    const newAmount = parseFloat(amount);
+    return (
+      newAmount !== tx.amount ||
+      debtType !== tx.debtType ||
+      accountId !== tx.accountId ||
+      isOld !== (tx.isOld ?? false)
+    );
+  }, [amount, debtType, accountId, isOld, tx]);
+
   const handleSave = useCallback(async () => {
     const newAmount = parseFloat(amount);
     if (!newAmount || newAmount <= 0 || !accountId) return;
     setSaving(true);
     try {
-      const adjustments = new Map<string, number>();
-      const adjust = (id: string | undefined, delta: number) => {
-        if (!id) return;
-        adjustments.set(id, (adjustments.get(id) ?? 0) + delta);
-      };
+      if (financialFieldsChanged) {
+        const adjustments = new Map<string, number>();
+        const adjust = (id: string | undefined, delta: number) => {
+          if (!id) return;
+          adjustments.set(id, (adjustments.get(id) ?? 0) + delta);
+        };
 
-      if (!tx.isOld) {
-        const netRemaining = tx.remainingAmount ?? tx.amount;
-        const reverseDelta = tx.debtType === 'taken' ? -netRemaining : netRemaining;
-        adjust(tx.accountId, reverseDelta);
-      }
-
-      if (!isOld) {
-        const applyDelta = debtType === 'taken' ? newAmount : -newAmount;
-        adjust(accountId, applyDelta);
-      }
-
-      for (const [id, delta] of adjustments) {
-        if (delta !== 0) {
-          const acc = accounts.find((a) => a.id === id);
-          if (acc) await updateAccount(id, { balance: acc.balance + delta });
+        if (!tx.isOld) {
+          const netRemaining = tx.remainingAmount ?? tx.amount;
+          const reverseDelta = tx.debtType === 'taken' ? -netRemaining : netRemaining;
+          adjust(tx.accountId, reverseDelta);
         }
-      }
 
-      await updateTransaction(tx.id, {
-        amount: newAmount,
-        accountId,
-        note: note.trim(),
-        date,
-        debtType,
-        isOld,
-        remainingAmount: newAmount,
-        status: 'active',
-        history: [],
-      });
+        if (!isOld) {
+          const applyDelta = debtType === 'taken' ? newAmount : -newAmount;
+          adjust(accountId, applyDelta);
+        }
+
+        for (const [id, delta] of adjustments) {
+          if (delta !== 0) {
+            const acc = accounts.find((a) => a.id === id);
+            if (acc) await updateAccount(id, { balance: acc.balance + delta });
+          }
+        }
+
+        await updateTransaction(tx.id, {
+          amount: newAmount,
+          accountId,
+          note: note.trim(),
+          date,
+          debtType,
+          isOld,
+          remainingAmount: newAmount,
+          status: 'active',
+          history: [],
+        });
+      } else {
+        await updateTransaction(tx.id, {
+          note: note.trim(),
+          date,
+        });
+      }
 
       setSuccess(true);
       setTimeout(() => onCloseClean(), 600);
     } finally {
       setSaving(false);
     }
-  }, [amount, accountId, note, date, debtType, isOld, tx, accounts, updateAccount, updateTransaction, onCloseClean]);
+  }, [amount, accountId, note, date, debtType, isOld, tx, accounts, updateAccount, updateTransaction, onCloseClean, financialFieldsChanged]);
 
   const handleSaveOrConfirm = useCallback(() => {
-    if (hasPayments && !confirmingReset) {
+    if (hasPayments && financialFieldsChanged && !confirmingReset) {
       setConfirmingReset(true);
       return;
     }
     handleSave();
-  }, [hasPayments, confirmingReset, handleSave]);
+  }, [hasPayments, financialFieldsChanged, confirmingReset, handleSave]);
 
   if (success) {
     return (
@@ -131,12 +148,12 @@ function EditDebtInner({
       </div>
 
       <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ overscrollBehavior: 'contain' }}>
-        {hasPayments && !confirmingReset && (
+        {hasPayments && financialFieldsChanged && !confirmingReset && (
           <div className="flex items-start gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-xl px-3.5 py-3">
             <AlertTriangle size={15} className="text-amber-400 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-amber-300 leading-relaxed">
               This debt has {tx.history!.length} payment{tx.history!.length > 1 ? 's' : ''} recorded.
-              Saving will clear all payment history and reset the remaining amount.
+              Changing financial details will clear payment history and reset the remaining amount.
             </p>
           </div>
         )}

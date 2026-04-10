@@ -11,6 +11,15 @@ import { DebtDetailSheet } from '../components/DebtDetailSheet';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { Expense, Transaction, Category } from '../database';
 
+function groupByDate(items: Transaction[]): [string, Transaction[]][] {
+  const groups: Record<string, Transaction[]> = {};
+  items.forEach((t) => {
+    if (!groups[t.date]) groups[t.date] = [];
+    groups[t.date].push(t);
+  });
+  return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
+}
+
 const TYPE_FILTERS = [
   { key: 'all', label: 'All' },
   { key: 'expense', label: 'Expenses' },
@@ -402,15 +411,6 @@ export function History() {
     [debtItems]
   );
 
-  const groupByDate = (items: Transaction[]): [string, Transaction[]][] => {
-    const groups: Record<string, Transaction[]> = {};
-    items.forEach((t) => {
-      if (!groups[t.date]) groups[t.date] = [];
-      groups[t.date].push(t);
-    });
-    return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
-  };
-
   const groupedExpenses = useMemo(() => groupByDate(expenseItems), [expenseItems]);
   const groupedIncome = useMemo(() => groupByDate(incomeItems), [incomeItems]);
   const groupedTransfers = useMemo(() => groupByDate(transferItems), [transferItems]);
@@ -573,8 +573,8 @@ export function History() {
           <span className="text-xs text-[#6B6B6B]">
             {(filterType === 'income' ? incomeItems : expenseItems).length} {TYPE_FILTERS.find((f) => f.key === filterType)?.label}
           </span>
-          <span className={`text-sm font-semibold ${totalFiltered >= 0 ? 'text-emerald-400' : 'text-white'}`}>
-            {totalFiltered >= 0 ? '+' : ''}{formatCurrency(Math.abs(totalFiltered), settings.currency)}
+          <span className={`text-sm font-semibold ${filterType === 'income' ? 'text-emerald-400' : 'text-white'}`}>
+            {filterType === 'income' ? '+' : '-'}{formatCurrency(Math.abs(totalFiltered), settings.currency)}
           </span>
         </div>
       )}
