@@ -388,8 +388,11 @@ export function History() {
     }));
   }, [transactions, expenses]);
 
-  const nonDebtItems = useMemo(() => allItems.filter((t) => t.type !== 'debt'), [allItems]);
   const debtItems = useMemo(() => allItems.filter((t) => t.type === 'debt'), [allItems]);
+  const expenseItems = useMemo(() => allItems.filter((t) => t.type === 'expense'), [allItems]);
+  const incomeItems = useMemo(() => allItems.filter((t) => t.type === 'income'), [allItems]);
+  const transferItems = useMemo(() => allItems.filter((t) => t.type === 'transfer'), [allItems]);
+
   const activeDebts = useMemo(
     () => debtItems.filter((t) => t.status !== 'settled' && (t.remainingAmount ?? t.amount) > 0),
     [debtItems]
@@ -399,22 +402,23 @@ export function History() {
     [debtItems]
   );
 
-  const filteredNonDebt = useMemo(() => {
-    if (filterType === 'all' || filterType === 'debt') return nonDebtItems;
-    return nonDebtItems.filter((t) => t.type === filterType);
-  }, [nonDebtItems, filterType]);
-
-  const groupedByDate = useMemo(() => {
+  const groupByDate = (items: Transaction[]): [string, Transaction[]][] => {
     const groups: Record<string, Transaction[]> = {};
-    filteredNonDebt.forEach((t) => {
+    items.forEach((t) => {
       if (!groups[t.date]) groups[t.date] = [];
       groups[t.date].push(t);
     });
     return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
-  }, [filteredNonDebt]);
+  };
+
+  const groupedExpenses = useMemo(() => groupByDate(expenseItems), [expenseItems]);
+  const groupedIncome = useMemo(() => groupByDate(incomeItems), [incomeItems]);
+  const groupedTransfers = useMemo(() => groupByDate(transferItems), [transferItems]);
 
   const showDebtSection = filterType === 'all' || filterType === 'debt';
-  const showDateGroups = filterType !== 'debt';
+  const showExpenseSection = filterType === 'all' || filterType === 'expense';
+  const showIncomeSection = filterType === 'all' || filterType === 'income';
+  const showTransferSection = filterType === 'all' || filterType === 'transfer';
 
   const handleDeleteTransaction = useCallback(async (tx: Transaction) => {
     setDeletingId(tx.id);
@@ -465,13 +469,16 @@ export function History() {
   }, [viewingDebt]);
 
   const totalFiltered = useMemo(() => {
-    const items = showDebtSection ? allItems : filteredNonDebt;
+    const items =
+      filterType === 'income' ? incomeItems :
+      filterType === 'expense' ? expenseItems :
+      allItems;
     return items.reduce((sum, t) => {
       if (t.type === 'income') return sum + t.amount;
       if (t.type === 'expense') return sum - t.amount;
       return sum;
     }, 0);
-  }, [allItems, filteredNonDebt, showDebtSection]);
+  }, [filterType, allItems, incomeItems, expenseItems]);
 
   if (loading) {
     return <GenericPageSkeleton />;
@@ -491,7 +498,35 @@ export function History() {
     );
   }
 
-  const hasContent = (showDebtSection && debtItems.length > 0) || (showDateGroups && groupedByDate.length > 0);
+  const hasContent =
+    (showDebtSection && debtItems.length > 0) ||
+    (showExpenseSection && expenseItems.length > 0) ||
+    (showIncomeSection && incomeItems.length > 0) ||
+    (showTransferSection && transferItems.length > 0);
+
+  const SectionDivider = () => <div className="h-px bg-white/5" />;
+
+  const renderDayGroups = (groups: [string, Transaction[]][]) =>
+    groups.map(([date, dayTxs], i) => (
+      <div
+        key={date}
+        className="animate-fade-up"
+        style={{ animationDelay: `${Math.min(i * 50, 300)}ms` }}
+      >
+        <DayGroup
+          date={date}
+          dayTxs={dayTxs}
+          categoryMap={categoryMap}
+          accountMap={accountMap}
+          expenses={expenses}
+          currency={settings.currency}
+          deletingId={deletingId}
+          onEdit={setEditingExpense}
+          onEditTx={handleEditTx}
+          onDelete={handleDeleteTransaction}
+        />
+      </div>
+    ));
 
   return (
     <div className="space-y-5 pb-4 animate-page-in">
@@ -531,10 +566,12 @@ export function History() {
         </div>
       )}
 
-      {filterType !== 'all' && (filterType === 'income' || filterType === 'expense') && filteredNonDebt.length > 0 && (
+      {(filterType === 'income' || filterType === 'expense') && (
+        filterType === 'income' ? incomeItems.length > 0 : expenseItems.length > 0
+      ) && (
         <div className="bg-[#1A1A1A] rounded-2xl px-4 py-3 border border-white/5 flex items-center justify-between">
           <span className="text-xs text-[#6B6B6B]">
-            {filteredNonDebt.length} {TYPE_FILTERS.find((f) => f.key === filterType)?.label}
+            {(filterType === 'income' ? incomeItems : expenseItems).length} {TYPE_FILTERS.find((f) => f.key === filterType)?.label}
           </span>
           <span className={`text-sm font-semibold ${totalFiltered >= 0 ? 'text-emerald-400' : 'text-white'}`}>
             {totalFiltered >= 0 ? '+' : ''}{formatCurrency(Math.abs(totalFiltered), settings.currency)}
@@ -552,62 +589,37 @@ export function History() {
         </div>
       ) : (
         <div className="space-y-6">
+
           {showDebtSection && debtItems.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-medium text-[#6B6B6B] uppercase tracking-widest">Debts</p>
                 <span className="text-xs text-[#6B6B6B]">{activeDebts.length} active</span>
               </div>
-
               <div className="space-y-2">
                 {activeDebts.map((tx, i) => (
-                  <div
-                    key={tx.id}
-                    className="animate-fade-up"
-                    style={{ animationDelay: `${Math.min(i * 40, 200)}ms` }}
-                  >
-                    <DebtRow
-                      tx={tx}
-                      accountMap={accountMap}
-                      currency={settings.currency}
-                      deletingId={deletingId}
-                      onView={setViewingDebt}
-                      onEdit={setEditingDebt}
-                      onDelete={handleDeleteTransaction}
-                    />
+                  <div key={tx.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i * 40, 200)}ms` }}>
+                    <DebtRow tx={tx} accountMap={accountMap} currency={settings.currency} deletingId={deletingId}
+                      onView={setViewingDebt} onEdit={setEditingDebt} onDelete={handleDeleteTransaction} />
                   </div>
                 ))}
               </div>
-
               {settledDebts.length > 0 && (
                 <div className="mt-3">
                   <button
                     onClick={() => setSettledOpen((o) => !o)}
                     className="flex items-center gap-1.5 text-xs text-[#6B6B6B] mb-2 hover:text-[#A0A0A0] transition-colors"
                   >
-                    <span
-                      className="transition-transform duration-200"
-                      style={{ display: 'inline-block', transform: settledOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
-                    >▶</span>
+                    <span className="transition-transform duration-200"
+                      style={{ display: 'inline-block', transform: settledOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
                     {settledDebts.length} settled
                   </button>
                   {settledOpen && (
                     <div className="space-y-2">
                       {settledDebts.map((tx, i) => (
-                        <div
-                          key={tx.id}
-                          className="animate-fade-up opacity-60"
-                          style={{ animationDelay: `${Math.min(i * 40, 200)}ms` }}
-                        >
-                          <DebtRow
-                            tx={tx}
-                            accountMap={accountMap}
-                            currency={settings.currency}
-                            deletingId={deletingId}
-                            onView={setViewingDebt}
-                            onEdit={setEditingDebt}
-                            onDelete={handleDeleteTransaction}
-                          />
+                        <div key={tx.id} className="animate-fade-up opacity-60" style={{ animationDelay: `${Math.min(i * 40, 200)}ms` }}>
+                          <DebtRow tx={tx} accountMap={accountMap} currency={settings.currency} deletingId={deletingId}
+                            onView={setViewingDebt} onEdit={setEditingDebt} onDelete={handleDeleteTransaction} />
                         </div>
                       ))}
                     </div>
@@ -617,33 +629,53 @@ export function History() {
             </div>
           )}
 
-          {showDateGroups && groupedByDate.length > 0 && (
-            <div className="space-y-5">
-              {showDebtSection && debtItems.length > 0 && (
-                <div className="h-px bg-white/5" />
-              )}
-              {groupedByDate.map(([date, dayTxs], i) => (
-                <div
-                  key={date}
-                  className="animate-fade-up"
-                  style={{ animationDelay: `${Math.min(i * 50, 300)}ms` }}
-                >
-                  <DayGroup
-                    date={date}
-                    dayTxs={dayTxs}
-                    categoryMap={categoryMap}
-                    accountMap={accountMap}
-                    expenses={expenses}
-                    currency={settings.currency}
-                    deletingId={deletingId}
-                    onEdit={setEditingExpense}
-                    onEditTx={handleEditTx}
-                    onDelete={handleDeleteTransaction}
-                  />
+          {showTransferSection && transferItems.length > 0 && (
+            <>
+              {showDebtSection && debtItems.length > 0 && <SectionDivider />}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-medium text-[#6B6B6B] uppercase tracking-widest">Transfers</p>
+                  <span className="text-xs text-[#6B6B6B]">{transferItems.length}</span>
                 </div>
-              ))}
-            </div>
+                <div className="space-y-5">
+                  {renderDayGroups(groupedTransfers)}
+                </div>
+              </div>
+            </>
           )}
+
+          {showIncomeSection && incomeItems.length > 0 && (
+            <>
+              {(showDebtSection && debtItems.length > 0) || (showTransferSection && transferItems.length > 0)
+                ? <SectionDivider /> : null}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-medium text-[#6B6B6B] uppercase tracking-widest">Income</p>
+                  <span className="text-xs text-emerald-400">+{formatCurrency(incomeItems.reduce((s, t) => s + t.amount, 0), settings.currency)}</span>
+                </div>
+                <div className="space-y-5">
+                  {renderDayGroups(groupedIncome)}
+                </div>
+              </div>
+            </>
+          )}
+
+          {showExpenseSection && expenseItems.length > 0 && (
+            <>
+              {(showDebtSection && debtItems.length > 0) || (showTransferSection && transferItems.length > 0) ||
+                (showIncomeSection && incomeItems.length > 0) ? <SectionDivider /> : null}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-medium text-[#6B6B6B] uppercase tracking-widest">Expenses</p>
+                  <span className="text-xs text-white">-{formatCurrency(expenseItems.reduce((s, t) => s + t.amount, 0), settings.currency)}</span>
+                </div>
+                <div className="space-y-5">
+                  {renderDayGroups(groupedExpenses)}
+                </div>
+              </div>
+            </>
+          )}
+
         </div>
       )}
 

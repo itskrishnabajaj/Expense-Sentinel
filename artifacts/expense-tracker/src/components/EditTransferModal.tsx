@@ -58,10 +58,11 @@ function EditTransferInner({
     if (!newAmount || newAmount <= 0 || !fromId || !toId || fromId === toId) return;
 
     const fromAcc = accounts.find((a) => a.id === fromId);
-    const netFromDelta = (tx.fromAccountId === fromId ? tx.amount : 0) - newAmount;
-    if (fromAcc && fromAcc.balance + netFromDelta < 0 && tx.fromAccountId !== fromId) {
-      if (fromAcc.balance < newAmount) {
-        setValidationError(`Insufficient balance in ${fromAcc.name} (${formatCurrency(fromAcc.balance, settings.currency)})`);
+    if (fromAcc) {
+      const reversal = tx.fromAccountId === fromId ? tx.amount : 0;
+      const availableBalance = fromAcc.balance + reversal;
+      if (newAmount > availableBalance) {
+        setValidationError(`Insufficient balance in ${fromAcc.name} (available: ${formatCurrency(availableBalance, settings.currency)})`);
         return;
       }
     }
