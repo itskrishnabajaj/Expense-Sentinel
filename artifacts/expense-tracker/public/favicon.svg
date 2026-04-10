@@ -1,8 +1,49 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
-  <rect width="180" height="180" rx="36" fill="#FFFFFF"/>
-  <rect x="26" y="112" width="26" height="36" rx="4" fill="#6366F1"/>
-  <rect x="58" y="90" width="26" height="58" rx="4" fill="#6366F1"/>
-  <rect x="90" y="68" width="26" height="80" rx="4" fill="#6366F1"/>
-  <rect x="122" y="46" width="26" height="102" rx="4" fill="#6366F1"/>
-  <rect x="22" y="150" width="136" height="5" rx="2.5" fill="#6366F1"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background: soft lavender-indigo -->
+  <rect width="512" height="512" rx="112" fill="#EEF2FF"/>
+
+  <!-- Tail (drawn behind body) -->
+  <path d="M 100 290 C 60 268 45 232 70 217 C 88 207 108 223 96 241 C 87 253 73 247 77 236"
+        fill="none" stroke="#818CF8" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Body underside / shadow for depth -->
+  <ellipse cx="224" cy="330" rx="118" ry="76" fill="#4F46E5"/>
+
+  <!-- Body main -->
+  <ellipse cx="224" cy="300" rx="130" ry="105" fill="#6366F1"/>
+
+  <!-- Body sheen (upper-left highlight) -->
+  <ellipse cx="192" cy="246" rx="66" ry="46" fill="#818CF8" opacity="0.24"/>
+
+  <!-- Head main -->
+  <circle cx="346" cy="262" r="84" fill="#6366F1"/>
+
+  <!-- Head sheen -->
+  <circle cx="324" cy="230" r="35" fill="#818CF8" opacity="0.22"/>
+
+  <!-- Ear outer (rotated slightly forward) -->
+  <g transform="rotate(-12, 368, 178)">
+    <ellipse cx="368" cy="178" rx="23" ry="33" fill="#4F46E5"/>
+    <ellipse cx="368" cy="180" rx="13" ry="19" fill="#818CF8"/>
+  </g>
+
+  <!-- Snout -->
+  <circle cx="421" cy="280" r="35" fill="#4F46E5"/>
+  <!-- Nostrils -->
+  <ellipse cx="411" cy="276" rx="7" ry="6" fill="#EEF2FF"/>
+  <ellipse cx="431" cy="276" rx="7" ry="6" fill="#EEF2FF"/>
+
+  <!-- Eye -->
+  <circle cx="370" cy="238" r="9" fill="#EEF2FF"/>
+  <circle cx="372" cy="236" r="5" fill="#3730A3"/>
+  <circle cx="374" cy="234" r="2" fill="white"/>
+
+  <!-- Coin slot on top of back -->
+  <rect x="202" y="202" width="44" height="11" rx="5.5" fill="#EEF2FF"/>
+
+  <!-- Legs (slightly deeper indigo for grounding) -->
+  <rect x="152" y="390" width="34" height="48" rx="10" fill="#4F46E5"/>
+  <rect x="197" y="395" width="34" height="43" rx="10" fill="#4F46E5"/>
+  <rect x="261" y="390" width="34" height="48" rx="10" fill="#4F46E5"/>
+  <rect x="306" y="395" width="34" height="43" rx="10" fill="#4F46E5"/>
 </svg>

@@ -25,7 +25,7 @@ export default defineConfig({
         short_name: 'MyLedger',
         description: 'Track your personal finances with a clean, minimal interface',
         theme_color: '#0D0D0D',
-        background_color: '#0D0D0D',
+        background_color: '#EEF2FF',
         display: 'standalone',
         display_override: ['standalone', 'minimal-ui'],
         orientation: 'portrait',
