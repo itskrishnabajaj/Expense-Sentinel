@@ -213,7 +213,7 @@ export function Insights() {
       {/* Compare View */}
       {view === 'compare' && (
         <div className="space-y-4">
-          <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+          <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)] animate-fade-up stagger-1">
             <p className="text-xs text-[#6B6B6B] mb-3 uppercase tracking-wider">Month over Month</p>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
@@ -246,7 +246,7 @@ export function Insights() {
             )}
           </div>
 
-          <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+          <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)] animate-fade-up stagger-2">
             <p className="text-xs text-[#6B6B6B] mb-3 uppercase tracking-wider">Week over Week</p>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
@@ -280,7 +280,7 @@ export function Insights() {
           </div>
 
           {(thisMonthTotal > 0 || lastMonthTotal > 0) && (
-            <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+            <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 animate-fade-up stagger-3">
               <p className="text-xs text-[#6B6B6B] mb-3 uppercase tracking-wider">Monthly Comparison</p>
               <div className="h-36" style={{ touchAction: 'pan-y' }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -321,7 +321,7 @@ export function Insights() {
           ) : (
             <>
               {/* Income / Expense / Net Flow */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2 animate-fade-up stagger-1">
                 <div className="bg-[#1A1A1A] rounded-2xl p-3.5 border border-white/5">
                   <p className="text-[10px] text-[#6B6B6B] mb-1 uppercase tracking-wider">Income</p>
                   <p className="text-sm font-bold text-emerald-400">{formatCurrency(incomeTotal, settings.currency)}</p>
@@ -341,7 +341,7 @@ export function Insights() {
               {filteredBudgetExpenses.length > 0 && (
                 <>
                   {categoryData.length > 0 && (
-                    <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+                    <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)] animate-fade-up stagger-2">
                       <h2 className="text-sm font-semibold text-white mb-4">Expenses by Category</h2>
                       <div className="h-44 mb-4" style={{ touchAction: 'pan-y' }}>
                         <ResponsiveContainer width="100%" height="100%">
@@ -389,7 +389,7 @@ export function Insights() {
                   )}
 
                   {dailyData.length > 1 && (
-                    <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
+                    <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 animate-fade-up stagger-3">
                       <h2 className="text-sm font-semibold text-white mb-4">Daily Spending</h2>
                       <div className="h-40" style={{ touchAction: 'pan-y' }}>
                         <ResponsiveContainer width="100%" height="100%">
@@ -407,7 +407,7 @@ export function Insights() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-3 animate-fade-up stagger-4">
                     {highestCategory && (
                       <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5">
                         <p className="text-xs text-[#6B6B6B] mb-2">Top Category</p>
