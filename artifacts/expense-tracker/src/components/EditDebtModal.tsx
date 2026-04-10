@@ -58,10 +58,9 @@ function EditDebtInner({
     return (
       newAmount !== tx.amount ||
       debtType !== tx.debtType ||
-      accountId !== tx.accountId ||
-      isOld !== (tx.isOld ?? false)
+      accountId !== tx.accountId
     );
-  }, [amount, debtType, accountId, isOld, tx]);
+  }, [amount, debtType, accountId, tx]);
 
   const handleSave = useCallback(async () => {
     const newAmount = parseFloat(amount);
@@ -108,6 +107,7 @@ function EditDebtInner({
         await updateTransaction(tx.id, {
           note: note.trim(),
           date,
+          isOld,
         });
       }
 
