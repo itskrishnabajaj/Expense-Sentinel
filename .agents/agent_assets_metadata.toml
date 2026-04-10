@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "8zN5gXCOSgFRgKiyRj5J8"
+uri = "file://artifacts/expense-tracker/public/icons/icon-512.png"
+type = "image"
+title = "myledger_piggybank_icon_512"
