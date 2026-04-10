@@ -21,9 +21,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
-        name: 'Expense Tracker',
-        short_name: 'Expenses',
-        description: 'Track your personal expenses with a clean, minimal interface',
+        name: 'MyLedger',
+        short_name: 'MyLedger',
+        description: 'Track your personal finances with a clean, minimal interface',
         theme_color: '#0D0D0D',
         background_color: '#0D0D0D',
         display: 'standalone',
