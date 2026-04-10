@@ -110,7 +110,7 @@ const AccountsStrip = memo(function AccountsStrip({
         {accounts.map((acc) => (
           <div
             key={acc.id}
-            className="flex-shrink-0 bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 min-w-[140px]"
+            className="flex-shrink-0 bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 min-w-[140px] card-press"
             style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.2)' }}
           >
             <div className="text-lg mb-2">{ACCOUNT_TYPE_ICONS[acc.type] ?? '💳'}</div>
@@ -120,11 +120,11 @@ const AccountsStrip = memo(function AccountsStrip({
         ))}
         {accounts.length > 1 && (
           <div
-            className="flex-shrink-0 bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 min-w-[140px] flex flex-col justify-between"
+            className="flex-shrink-0 bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 min-w-[140px] flex flex-col justify-between card-press"
             style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.2)' }}
           >
             <div className="text-lg mb-2">💼</div>
-            <p className="text-xs text-[#6B6B6B] mb-1">Net Worth</p>
+            <p className="text-xs text-[#6B6B6B] mb-1">Total Balance</p>
             <p className="text-base font-bold text-white">
               <AnimatedCurrency value={netWorth} currency={currency} />
             </p>
@@ -358,9 +358,9 @@ export function Home() {
   const hasAccounts = accounts.length > 0;
 
   return (
-    <div className="space-y-5 pb-4">
+    <div className="space-y-5 pb-4 animate-page-in">
       {/* Header */}
-      <div>
+      <div className="animate-fade-up stagger-1">
         <p className="text-xs text-[#6B6B6B] uppercase tracking-widest mb-1">
           {getMonthName(currentMonth)} {currentYear}
         </p>
@@ -369,27 +369,33 @@ export function Home() {
 
       {/* Accounts Strip */}
       {hasAccounts && (
-        <AccountsStrip
-          accounts={accounts}
-          netWorth={netWorth}
-          currency={settings.currency}
-        />
+        <div className="animate-fade-up stagger-2">
+          <AccountsStrip
+            accounts={accounts}
+            netWorth={netWorth}
+            currency={settings.currency}
+          />
+        </div>
       )}
 
       {/* Total Spent Card */}
-      <TotalSpentCard
-        total={total}
-        budget={budget}
-        remaining={remaining}
-        currency={settings.currency}
-      />
+      <div className="animate-fade-up stagger-3">
+        <TotalSpentCard
+          total={total}
+          budget={budget}
+          remaining={remaining}
+          currency={settings.currency}
+        />
+      </div>
 
       {/* Stats Row */}
-      <StatsRow
-        monthIncome={monthIncome}
-        dailyAvg={dailyAvg}
-        currency={settings.currency}
-      />
+      <div className="animate-fade-up stagger-4">
+        <StatsRow
+          monthIncome={monthIncome}
+          dailyAvg={dailyAvg}
+          currency={settings.currency}
+        />
+      </div>
 
       {/* Budget Alert */}
       {budget > 0 && budgetPct >= 80 && (
@@ -413,19 +419,23 @@ export function Home() {
       )}
 
       {/* Top Categories */}
-      <TopCategoriesCard
-        topCategories={topCategories}
-        total={total}
-        currency={settings.currency}
-      />
+      <div className="animate-fade-up stagger-5">
+        <TopCategoriesCard
+          topCategories={topCategories}
+          total={total}
+          currency={settings.currency}
+        />
+      </div>
 
       {/* Recent Transactions */}
-      <RecentTransactionsCard
-        transactions={recentTransactions}
-        categoryMap={categoryMap}
-        accountMap={accountMap}
-        currency={settings.currency}
-      />
+      <div className="animate-fade-up stagger-6">
+        <RecentTransactionsCard
+          transactions={recentTransactions}
+          categoryMap={categoryMap}
+          accountMap={accountMap}
+          currency={settings.currency}
+        />
+      </div>
 
       {/* Empty State */}
       {transactions.length === 0 && expenses.length === 0 && (

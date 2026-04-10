@@ -141,14 +141,14 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="space-y-5 pb-4">
-      <div>
+    <div className="space-y-5 pb-4 animate-page-in">
+      <div className="animate-fade-up stagger-1">
         <p className="text-xs text-[#6B6B6B] uppercase tracking-widest mb-1">Preferences</p>
         <h1 className="text-2xl font-bold text-white">Settings</h1>
       </div>
 
       {/* Budget */}
-      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)] animate-fade-up stagger-2">
         <h2 className="text-sm font-semibold text-white mb-3">Monthly Budget</h2>
         <div className="bg-[#0D0D0D] border border-white/10 rounded-xl px-4 py-3 flex items-center gap-2">
           <span className="text-[#6B6B6B] text-sm">₹</span>
@@ -174,7 +174,7 @@ export function SettingsPage() {
       </div>
 
       {/* Accounts */}
-      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)] animate-fade-up stagger-3">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-white">Accounts</h2>
           <button
@@ -223,7 +223,7 @@ export function SettingsPage() {
       </div>
 
       {/* Categories */}
-      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+      <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)] animate-fade-up stagger-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-white">Categories</h2>
           <button
@@ -259,7 +259,7 @@ export function SettingsPage() {
       </div>
 
       {/* Data Actions */}
-      <div className="bg-[#1A1A1A] rounded-2xl p-1 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+      <div className="bg-[#1A1A1A] rounded-2xl p-1 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)] animate-fade-up stagger-5">
         <button
           onClick={handleExport}
           className="w-full flex items-center gap-3 px-3 py-3.5 rounded-xl active:bg-white/5 transition-colors"

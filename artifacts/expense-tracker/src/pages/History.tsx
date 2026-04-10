@@ -126,7 +126,7 @@ const TxRow = memo(function TxRow({
   const isExpenseTx = tx.type === 'expense';
 
   return (
-    <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+    <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.2)] card-press">
       <TxTypeIcon tx={tx} catIcon={cat?.icon} catColor={cat?.color} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-white truncate">{txTitle(tx, cat?.name)}</p>
@@ -331,9 +331,9 @@ export function History() {
   }, 0);
 
   return (
-    <div className="space-y-5 pb-4">
+    <div className="space-y-5 pb-4 animate-page-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between animate-fade-up stagger-1">
         <div>
           <p className="text-xs text-[#6B6B6B] uppercase tracking-widest mb-1">Records</p>
           <h1 className="text-2xl font-bold text-white">History</h1>
@@ -353,7 +353,7 @@ export function History() {
 
       {/* Filter Pills */}
       {showFilter && (
-        <div className="bg-[#1A1A1A] rounded-2xl p-3 border border-white/5">
+        <div className="bg-[#1A1A1A] rounded-2xl p-3 border border-white/5 animate-fade-up">
           <div className="flex flex-wrap gap-2">
             {TYPE_FILTERS.map(({ key, label }) => (
               <button
@@ -390,19 +390,24 @@ export function History() {
         </div>
       ) : (
         <div className="space-y-5">
-          {groupedByDate.map(([date, dayTxs]) => (
-            <DayGroup
+          {groupedByDate.map(([date, dayTxs], i) => (
+            <div
               key={date}
-              date={date}
-              dayTxs={dayTxs}
-              categoryMap={categoryMap}
-              accountMap={accountMap}
-              expenses={expenses}
-              currency={settings.currency}
-              deletingId={deletingId}
-              onEdit={setEditingExpense}
-              onDelete={handleDeleteTransaction}
-            />
+              className="animate-fade-up"
+              style={{ animationDelay: `${Math.min(i * 50, 300)}ms` }}
+            >
+              <DayGroup
+                date={date}
+                dayTxs={dayTxs}
+                categoryMap={categoryMap}
+                accountMap={accountMap}
+                expenses={expenses}
+                currency={settings.currency}
+                deletingId={deletingId}
+                onEdit={setEditingExpense}
+                onDelete={handleDeleteTransaction}
+              />
+            </div>
           ))}
         </div>
       )}

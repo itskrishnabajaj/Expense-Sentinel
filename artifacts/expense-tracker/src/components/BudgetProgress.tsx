@@ -26,7 +26,16 @@ export const BudgetProgress = memo(function BudgetProgress({ spent, budget, show
       <div className={`h-2 rounded-full ${bgColor} overflow-hidden`}>
         <div
           className={`h-full rounded-full ${color} transition-all duration-700 ease-out`}
-          style={{ width: `${pct}%` }}
+          style={{
+            width: `${pct}%`,
+            boxShadow: pct > 0
+              ? `0 0 8px ${
+                  pct >= 100 ? 'rgba(239,68,68,0.55)'
+                  : pct >= 80 ? 'rgba(245,158,11,0.55)'
+                  : 'rgba(99,102,241,0.55)'
+                }`
+              : 'none',
+          }}
         />
       </div>
     </div>

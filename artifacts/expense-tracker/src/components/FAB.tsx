@@ -100,7 +100,15 @@ export function FAB() {
     <>
       {open && (
         <div
-          style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99,
+            background: 'rgba(0,0,0,0.22)',
+            backdropFilter: 'blur(2px)',
+            WebkitBackdropFilter: 'blur(2px)',
+            animation: 'fade-overlay 0.18s ease both',
+          }}
           {...overlayTap}
         />
       )}
@@ -128,33 +136,36 @@ export function FAB() {
           />
         ))}
 
-        <TapButton
-          onTap={() => setOpen((v) => !v)}
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: '50%',
-            background: '#6366F1',
-            border: 'none',
-            outline: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 4px 20px rgba(99,102,241,0.4)',
-            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-            flexShrink: 0,
-          }}
-        >
-          <Plus
-            size={24}
-            color="#ffffff"
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          {!open && <div className="fab-ring" />}
+          <TapButton
+            onTap={() => setOpen((v) => !v)}
             style={{
-              transform: open ? 'rotate(45deg)' : 'rotate(0deg)',
-              transition: 'transform 0.22s cubic-bezier(0.34,1.56,0.64,1)',
+              position: 'relative',
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: '#6366F1',
+              border: 'none',
+              outline: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 20px rgba(99,102,241,0.4)',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
             }}
-          />
-        </TapButton>
+          >
+            <Plus
+              size={24}
+              color="#ffffff"
+              style={{
+                transform: open ? 'rotate(45deg)' : 'rotate(0deg)',
+                transition: 'transform 0.22s cubic-bezier(0.34,1.56,0.64,1)',
+              }}
+            />
+          </TapButton>
+        </div>
       </div>
 
       {activeModal === 'income' && <IncomeModal onClose={closeModal} />}

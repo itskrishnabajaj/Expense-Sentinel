@@ -151,16 +151,16 @@ export function Insights() {
   }
 
   return (
-    <div className="space-y-5 pb-4">
+    <div className="space-y-5 pb-4 animate-page-in">
       {/* Header */}
-      <div>
+      <div className="animate-fade-up stagger-1">
         <p className="text-xs text-[#6B6B6B] uppercase tracking-widest mb-1">Analytics</p>
         <h1 className="text-2xl font-bold text-white">Insights</h1>
       </div>
 
       {/* Accounts Summary */}
       {accounts.length > 0 && (
-        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+        <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)] animate-fade-up stagger-2">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-white">Accounts</h2>
             <div className="flex items-center gap-1.5">
@@ -196,7 +196,7 @@ export function Insights() {
       )}
 
       {/* View Toggle */}
-      <div className="flex bg-[#1A1A1A] rounded-xl p-1 border border-white/5">
+      <div className="flex bg-[#1A1A1A] rounded-xl p-1 border border-white/5 animate-fade-up stagger-3">
         {(['month', 'week', 'compare'] as View[]).map((v) => (
           <button
             key={v}
