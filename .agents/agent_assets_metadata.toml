@@ -1,8 +1,0 @@
-uploads = []
-outputs = []
-
-[[generated]]
-id = "GazpQXkdGsc7Xeu3wvOw-"
-uri = "file://artifacts/expense-tracker/public/icons/icon-512.png"
-type = "image"
-title = "myledger_icon_512"
