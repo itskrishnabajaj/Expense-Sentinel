@@ -301,7 +301,7 @@ function EditDebtInner({
                 : 'bg-[#111111] text-[#444] border border-white/5 cursor-not-allowed'
             }`}
           >
-            {saving ? 'Saving…' : hasPayments ? 'Update & Reset Payments' : 'Update Debt'}
+            {saving ? 'Saving…' : (hasPayments && financialFieldsChanged) ? 'Update & Reset Payments' : 'Update Debt'}
           </TapButton>
         </div>
       )}
