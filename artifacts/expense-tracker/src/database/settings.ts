@@ -2,7 +2,7 @@ import { getDB } from './db';
 
 export interface AppSettings {
   monthly_budget: number;
-  currency: string;
+  readonly currency: 'INR';
 }
 
 const DEFAULTS: AppSettings = {
