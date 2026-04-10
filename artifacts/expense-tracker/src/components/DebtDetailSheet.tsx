@@ -129,7 +129,7 @@ function DebtDetailInner({
           <div className="w-8" />
         </div>
 
-        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ overscrollBehavior: 'contain' }}>
+        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
           <div className="bg-[#111111] rounded-2xl p-4 text-center border border-white/5">
             <p className="text-xs text-[#6B6B6B] mb-2 uppercase tracking-widest">Amount to Pay</p>
             <div className="h-12 flex items-center justify-center">
@@ -193,7 +193,7 @@ function DebtDetailInner({
         </TapButton>
       </div>
 
-      <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
+      <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
         <div className="bg-[#111111] rounded-2xl p-4 border border-white/5">
           <div className="flex items-center justify-between mb-1">
             <span className={`text-xs font-semibold uppercase tracking-widest ${tx.debtType === 'taken' ? 'text-emerald-400' : 'text-red-400'}`}>

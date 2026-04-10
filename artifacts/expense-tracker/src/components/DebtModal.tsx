@@ -96,7 +96,7 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
         </TapButton>
       </div>
 
-      <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ overscrollBehavior: 'contain' }}>
+      <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
         <div className="grid grid-cols-2 gap-2">
           {(['taken', 'given'] as const).map((t) => (
             <TapButton

@@ -3,9 +3,10 @@ import { Modal, useModalClose } from './Modal';
 import { TapButton } from './TapButton';
 
 export const CATEGORY_ICONS = [
-  '🍽️', '🚗', '🛍️', '🎬', '💊', '⚡', '✈️', '📚',
-  '👤', '💰', '🏠', '🎮', '☕', '🐾', '💪', '🎵',
-  '🌿', '🎨', '💼', '🧴',
+  '🍔', '🚗', '🏠', '🛒', '🎬', '💊',
+  '👩‍❤️‍💋‍👨', '📚', '🎁', '🧴', '⚡', '💼',
+  '🧘', '🧹', '🐾', '✈️', '🔧', '💪',
+  '💰', '🏦', '💳', '🔁', '📈', '🧍',
 ];
 
 export const CATEGORY_COLORS = [
@@ -144,19 +145,18 @@ function CategoryFormInner({
           >
             Icon
           </label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
             {CATEGORY_ICONS.map((icon) => (
               <TapButton
                 key={icon}
                 onTap={() => onFormChange({ ...form, icon })}
                 style={{
-                  width: 40,
-                  height: 40,
+                  aspectRatio: '1',
                   borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '18px',
+                  fontSize: '20px',
                   background: form.icon === icon ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
                   border: form.icon === icon ? '1px solid rgba(99,102,241,0.7)' : '1px solid transparent',
                   outline: 'none',
