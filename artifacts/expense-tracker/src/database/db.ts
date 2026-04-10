@@ -61,7 +61,7 @@ export interface Transaction {
   history?: DebtPayment[];
 }
 
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';
 
 const DB_NAME = 'expense-tracker-db';
 const DB_VERSION = 3;
