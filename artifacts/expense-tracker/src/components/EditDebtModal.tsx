@@ -30,6 +30,7 @@ function EditDebtInner({
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showAccountSheet, setShowAccountSheet] = useState(false);
+  const [confirmingReset, setConfirmingReset] = useState(false);
 
   const hasPayments = (tx.history ?? []).length > 0;
   const selectedAccount = accounts.find((a) => a.id === accountId) ?? accounts[0];
@@ -64,7 +65,8 @@ function EditDebtInner({
       };
 
       if (!tx.isOld) {
-        const reverseDelta = tx.debtType === 'taken' ? -tx.amount : tx.amount;
+        const netRemaining = tx.remainingAmount ?? tx.amount;
+        const reverseDelta = tx.debtType === 'taken' ? -netRemaining : netRemaining;
         adjust(tx.accountId, reverseDelta);
       }
 
@@ -99,6 +101,14 @@ function EditDebtInner({
     }
   }, [amount, accountId, note, date, debtType, isOld, tx, accounts, updateAccount, updateTransaction, onCloseClean]);
 
+  const handleSaveOrConfirm = useCallback(() => {
+    if (hasPayments && !confirmingReset) {
+      setConfirmingReset(true);
+      return;
+    }
+    handleSave();
+  }, [hasPayments, confirmingReset, handleSave]);
+
   if (success) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-6 gap-3">
@@ -121,13 +131,39 @@ function EditDebtInner({
       </div>
 
       <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ overscrollBehavior: 'contain' }}>
-        {hasPayments && (
+        {hasPayments && !confirmingReset && (
           <div className="flex items-start gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-xl px-3.5 py-3">
             <AlertTriangle size={15} className="text-amber-400 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-amber-300 leading-relaxed">
               This debt has {tx.history!.length} payment{tx.history!.length > 1 ? 's' : ''} recorded.
-              Saving will reset the payment history and restore the full amount as remaining.
+              Saving will clear all payment history and reset the remaining amount.
             </p>
+          </div>
+        )}
+        {confirmingReset && (
+          <div className="bg-red-500/10 border border-red-500/25 rounded-xl px-3.5 py-3 space-y-2.5">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle size={15} className="text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-red-300 leading-relaxed font-medium">
+                Permanently clear {tx.history!.length} payment record{tx.history!.length > 1 ? 's' : ''}? This cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <TapButton
+                onTap={() => setConfirmingReset(false)}
+                className="flex-1 py-2 rounded-xl text-xs font-medium text-[#A0A0A0] border border-white/10"
+                style={{ background: 'rgba(255,255,255,0.04)' }}
+              >
+                Cancel
+              </TapButton>
+              <TapButton
+                onTap={handleSave}
+                disabled={saving}
+                className="flex-1 py-2 rounded-xl text-xs font-semibold bg-red-500 active:bg-red-600 text-white"
+              >
+                {saving ? 'Saving…' : 'Reset & Save'}
+              </TapButton>
+            </div>
           </div>
         )}
 
@@ -237,19 +273,21 @@ function EditDebtInner({
         </TapButton>
       </div>
 
-      <div className="px-5 py-4 flex-shrink-0 border-t border-white/5">
-        <TapButton
-          onTap={handleSave}
-          disabled={!isValid || saving}
-          className={`w-full py-3.5 rounded-2xl text-sm font-semibold transition-all ${
-            isValid && !saving
-              ? 'bg-amber-500 active:bg-amber-600 text-white'
-              : 'bg-[#111111] text-[#444] border border-white/5 cursor-not-allowed'
-          }`}
-        >
-          {saving ? 'Saving…' : hasPayments ? 'Update & Reset Payments' : 'Update Debt'}
-        </TapButton>
-      </div>
+      {!confirmingReset && (
+        <div className="px-5 py-4 flex-shrink-0 border-t border-white/5">
+          <TapButton
+            onTap={handleSaveOrConfirm}
+            disabled={!isValid || saving}
+            className={`w-full py-3.5 rounded-2xl text-sm font-semibold transition-all ${
+              isValid && !saving
+                ? 'bg-amber-500 active:bg-amber-600 text-white'
+                : 'bg-[#111111] text-[#444] border border-white/5 cursor-not-allowed'
+            }`}
+          >
+            {saving ? 'Saving…' : hasPayments ? 'Update & Reset Payments' : 'Update Debt'}
+          </TapButton>
+        </div>
+      )}
 
       {showAccountSheet && (
         <AccountSheet
