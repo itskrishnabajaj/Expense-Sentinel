@@ -19,7 +19,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/*.png'],
+      includeAssets: ['favicon.svg', 'icons/icon.svg', 'icons/*.png'],
       manifest: {
         name: 'MyLedger',
         short_name: 'MyLedger',
