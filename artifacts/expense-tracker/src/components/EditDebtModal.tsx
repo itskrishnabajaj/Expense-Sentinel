@@ -53,7 +53,7 @@ function EditDebtInner({
     });
   }, []);
 
-  const financialFieldsChanged = useMemo(() => {
+  const financialAmountsChanged = useMemo(() => {
     const newAmount = parseFloat(amount);
     return (
       newAmount !== tx.amount ||
@@ -61,6 +61,10 @@ function EditDebtInner({
       accountId !== tx.accountId
     );
   }, [amount, debtType, accountId, tx]);
+
+  const isOldChanged = useMemo(() => isOld !== (tx.isOld ?? false), [isOld, tx.isOld]);
+
+  const financialFieldsChanged = financialAmountsChanged || isOldChanged;
 
   const handleSave = useCallback(async () => {
     const newAmount = parseFloat(amount);
@@ -92,17 +96,25 @@ function EditDebtInner({
           }
         }
 
-        await updateTransaction(tx.id, {
-          amount: newAmount,
-          accountId,
-          note: note.trim(),
-          date,
-          debtType,
-          isOld,
-          remainingAmount: newAmount,
-          status: 'active',
-          history: [],
-        });
+        if (financialAmountsChanged) {
+          await updateTransaction(tx.id, {
+            amount: newAmount,
+            accountId,
+            note: note.trim(),
+            date,
+            debtType,
+            isOld,
+            remainingAmount: newAmount,
+            status: 'active',
+            history: [],
+          });
+        } else {
+          await updateTransaction(tx.id, {
+            note: note.trim(),
+            date,
+            isOld,
+          });
+        }
       } else {
         await updateTransaction(tx.id, {
           note: note.trim(),
@@ -116,15 +128,15 @@ function EditDebtInner({
     } finally {
       setSaving(false);
     }
-  }, [amount, accountId, note, date, debtType, isOld, tx, accounts, updateAccount, updateTransaction, onCloseClean, financialFieldsChanged]);
+  }, [amount, accountId, note, date, debtType, isOld, tx, accounts, updateAccount, updateTransaction, onCloseClean, financialFieldsChanged, financialAmountsChanged]);
 
   const handleSaveOrConfirm = useCallback(() => {
-    if (hasPayments && financialFieldsChanged && !confirmingReset) {
+    if (hasPayments && financialAmountsChanged && !confirmingReset) {
       setConfirmingReset(true);
       return;
     }
     handleSave();
-  }, [hasPayments, financialFieldsChanged, confirmingReset, handleSave]);
+  }, [hasPayments, financialAmountsChanged, confirmingReset, handleSave]);
 
   if (success) {
     return (
@@ -148,7 +160,7 @@ function EditDebtInner({
       </div>
 
       <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ overscrollBehavior: 'contain' }}>
-        {hasPayments && financialFieldsChanged && !confirmingReset && (
+        {hasPayments && financialAmountsChanged && !confirmingReset && (
           <div className="flex items-start gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-xl px-3.5 py-3">
             <AlertTriangle size={15} className="text-amber-400 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-amber-300 leading-relaxed">
@@ -301,7 +313,7 @@ function EditDebtInner({
                 : 'bg-[#111111] text-[#444] border border-white/5 cursor-not-allowed'
             }`}
           >
-            {saving ? 'Saving…' : (hasPayments && financialFieldsChanged) ? 'Update & Reset Payments' : 'Update Debt'}
+            {saving ? 'Saving…' : (hasPayments && financialAmountsChanged) ? 'Update & Reset Payments' : 'Update Debt'}
           </TapButton>
         </div>
       )}

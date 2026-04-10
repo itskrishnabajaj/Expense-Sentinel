@@ -24,8 +24,7 @@ export async function setSetting<K extends keyof AppSettings>(key: K, value: App
 
 export async function getAllSettings(): Promise<AppSettings> {
   const budget = await getSetting('monthly_budget');
-  const currency = await getSetting('currency');
-  return { monthly_budget: budget, currency };
+  return { monthly_budget: budget, currency: 'INR' };
 }
 
 export async function clearAllData(): Promise<void> {

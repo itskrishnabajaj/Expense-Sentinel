@@ -1,17 +1,9 @@
-export function formatCurrency(amount: number, currency = 'INR'): string {
-  if (currency === 'INR') {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-      minimumFractionDigits: 0,
-    }).format(amount);
-  }
-  return new Intl.NumberFormat('en-US', {
+export function formatCurrency(amount: number, _currency = 'INR'): string {
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    currency: 'INR',
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
   }).format(amount);
 }
 
@@ -72,6 +64,6 @@ export function isThisWeek(dateStr: string): boolean {
   return date >= startOfWeek && date <= today;
 }
 
-export function getCurrencySymbol(currency = 'INR'): string {
-  return currency === 'INR' ? '₹' : '$';
+export function getCurrencySymbol(_currency = 'INR'): string {
+  return '₹';
 }
