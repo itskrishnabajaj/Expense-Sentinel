@@ -1,4 +1,4 @@
-import { getDB, generateId, Transaction } from './db';
+import { getDB, generateId, Transaction, DebtPayment } from './db';
 
 export async function addTransaction(data: Omit<Transaction, 'id' | 'createdAt'>): Promise<Transaction> {
   const db = await getDB();
@@ -55,4 +55,31 @@ export async function getTransactionsByType(type: Transaction['type']): Promise<
   const index = store.index('by-type');
   const all = await index.getAll(type);
   return all.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export async function addDebtPayment(
+  debtId: string,
+  payment: Omit<DebtPayment, 'id' | 'createdAt'>,
+  newRemainingAmount: number,
+  newStatus: 'active' | 'settled'
+): Promise<Transaction | null> {
+  const db = await getDB();
+  const existing = await db.get('transactions', debtId);
+  if (!existing) return null;
+
+  const newPayment: DebtPayment = {
+    ...payment,
+    id: generateId(),
+    createdAt: Date.now(),
+  };
+
+  const updated: Transaction = {
+    ...existing,
+    remainingAmount: newRemainingAmount,
+    status: newStatus,
+    history: [...(existing.history ?? []), newPayment],
+  };
+
+  await db.put('transactions', updated);
+  return updated;
 }

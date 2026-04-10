@@ -4,8 +4,12 @@ import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { GenericPageSkeleton } from '../components/Skeleton';
 import { AddExpense } from './AddExpense';
+import { EditIncomeModal } from '../components/EditIncomeModal';
+import { EditTransferModal } from '../components/EditTransferModal';
+import { EditDebtModal } from '../components/EditDebtModal';
+import { DebtDetailSheet } from '../components/DebtDetailSheet';
 import { formatCurrency, formatDate } from '../utils/formatters';
-import { Expense, Transaction, Category, Account } from '../database';
+import { Expense, Transaction, Category } from '../database';
 
 const TYPE_FILTERS = [
   { key: 'all', label: 'All' },
@@ -80,7 +84,7 @@ function txTitle(tx: Transaction, catName?: string) {
     case 'expense':
       return tx.note || catName || 'Expense';
     case 'transfer':
-      return 'Transfer';
+      return tx.note || 'Transfer';
     case 'debt':
       return tx.note || (tx.debtType === 'taken' ? 'Borrowed' : 'Lent');
   }
@@ -110,6 +114,7 @@ const TxRow = memo(function TxRow({
   deletingId,
   originalExpense,
   onEdit,
+  onEditTx,
   onDelete,
 }: {
   tx: Transaction;
@@ -119,11 +124,13 @@ const TxRow = memo(function TxRow({
   deletingId: string | null;
   originalExpense?: Expense;
   onEdit: (e: Expense) => void;
+  onEditTx: (t: Transaction) => void;
   onDelete: (tx: Transaction) => void;
 }) {
   const cat = tx.categoryId ? categoryMap.get(tx.categoryId) : undefined;
   const amtInfo = txAmountLabel(tx, currency);
   const isExpenseTx = tx.type === 'expense';
+  const isEditable = tx.type === 'income' || tx.type === 'transfer';
 
   return (
     <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.2)] card-press">
@@ -141,6 +148,15 @@ const TxRow = memo(function TxRow({
             onClick={() => onEdit(originalExpense)}
             className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg flex-shrink-0"
             aria-label="Edit expense"
+          >
+            <Pencil size={14} />
+          </button>
+        )}
+        {isEditable && (
+          <button
+            onClick={() => onEditTx(tx)}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg flex-shrink-0"
+            aria-label={`Edit ${tx.type}`}
           >
             <Pencil size={14} />
           </button>
@@ -167,6 +183,7 @@ const DayGroup = memo(function DayGroup({
   currency,
   deletingId,
   onEdit,
+  onEditTx,
   onDelete,
 }: {
   date: string;
@@ -177,6 +194,7 @@ const DayGroup = memo(function DayGroup({
   currency: string;
   deletingId: string | null;
   onEdit: (e: Expense) => void;
+  onEditTx: (t: Transaction) => void;
   onDelete: (tx: Transaction) => void;
 }) {
   const dayExpenses = dayTxs.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
@@ -210,12 +228,106 @@ const DayGroup = memo(function DayGroup({
               deletingId={deletingId}
               originalExpense={originalExpense}
               onEdit={onEdit}
+              onEditTx={onEditTx}
               onDelete={onDelete}
             />
           );
         })}
       </div>
     </div>
+  );
+});
+
+const DebtRow = memo(function DebtRow({
+  tx,
+  accountMap,
+  currency,
+  deletingId,
+  onView,
+  onDelete,
+}: {
+  tx: Transaction;
+  accountMap: Map<string, { name: string; type: string }>;
+  currency: string;
+  deletingId: string | null;
+  onView: (tx: Transaction) => void;
+  onDelete: (tx: Transaction) => void;
+}) {
+  const remaining = tx.remainingAmount ?? tx.amount;
+  const total = tx.amount;
+  const pct = total > 0 ? Math.max(0, Math.min(100, ((total - remaining) / total) * 100)) : 0;
+  const isSettled = tx.status === 'settled' || remaining <= 0;
+  const account = tx.accountId ? accountMap.get(tx.accountId) : undefined;
+
+  return (
+    <button
+      onClick={() => onView(tx)}
+      className="w-full bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.2)] card-press text-left"
+    >
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: 'rgba(245,158,11,0.12)' }}>
+          <AlertCircle size={17} className="text-amber-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium text-white truncate">
+              {tx.note || (tx.debtType === 'taken' ? 'Borrowed' : 'Lent')}
+            </p>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                isSettled
+                  ? 'bg-emerald-500/15 text-emerald-400'
+                  : 'bg-amber-500/15 text-amber-400'
+              }`}>
+                {isSettled ? 'Settled' : 'Active'}
+              </span>
+              <span className="text-sm font-semibold"
+                style={{ color: tx.debtType === 'taken' ? '#34D399' : '#F87171' }}>
+                {tx.debtType === 'taken' ? '+' : '-'}{formatCurrency(total, currency)}
+              </span>
+              <Trash2
+                size={14}
+                className="text-[#6B6B6B] ml-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(tx);
+                }}
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            {account && (
+              <p className="text-xs text-[#6B6B6B]">
+                {ACCOUNT_TYPE_ICONS[account.type] ?? '💳'} {account.name}
+              </p>
+            )}
+            <p className="text-xs text-[#6B6B6B]">·</p>
+            <p className="text-xs text-[#6B6B6B]">{formatDate(tx.date)}</p>
+          </div>
+          {!isSettled && (
+            <div className="mt-2.5 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#6B6B6B]">
+                  Remaining: {formatCurrency(remaining, currency)}
+                </span>
+                <span className="text-xs text-[#6B6B6B]">{Math.round(pct)}% paid</span>
+              </div>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${pct}%`,
+                    background: '#34D399',
+                    boxShadow: pct > 0 ? '0 0 6px rgba(52,211,153,0.4)' : 'none',
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </button>
   );
 });
 
@@ -234,6 +346,10 @@ export function History() {
 
   const [filterType, setFilterType] = useState<FilterKey>('all');
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [editingIncome, setEditingIncome] = useState<Transaction | null>(null);
+  const [editingTransfer, setEditingTransfer] = useState<Transaction | null>(null);
+  const [editingDebt, setEditingDebt] = useState<Transaction | null>(null);
+  const [viewingDebt, setViewingDebt] = useState<Transaction | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
 
@@ -258,19 +374,25 @@ export function History() {
     }));
   }, [transactions, expenses]);
 
-  const filtered = useMemo(() => {
-    if (filterType === 'all') return allItems;
-    return allItems.filter((t) => t.type === filterType);
-  }, [allItems, filterType]);
+  const nonDebtItems = useMemo(() => allItems.filter((t) => t.type !== 'debt'), [allItems]);
+  const debtItems = useMemo(() => allItems.filter((t) => t.type === 'debt'), [allItems]);
+
+  const filteredNonDebt = useMemo(() => {
+    if (filterType === 'all' || filterType === 'debt') return nonDebtItems;
+    return nonDebtItems.filter((t) => t.type === filterType);
+  }, [nonDebtItems, filterType]);
 
   const groupedByDate = useMemo(() => {
     const groups: Record<string, Transaction[]> = {};
-    filtered.forEach((t) => {
+    filteredNonDebt.forEach((t) => {
       if (!groups[t.date]) groups[t.date] = [];
       groups[t.date].push(t);
     });
     return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
-  }, [filtered]);
+  }, [filteredNonDebt]);
+
+  const showDebtSection = filterType === 'all' || filterType === 'debt';
+  const showDateGroups = filterType !== 'debt';
 
   const handleDeleteTransaction = useCallback(async (tx: Transaction) => {
     setDeletingId(tx.id);
@@ -278,7 +400,7 @@ export function History() {
       if (tx.type === 'expense') {
         const expId = tx.expenseId ?? tx.id;
         await deleteExpense(expId);
-        try { await deleteTransaction(tx.id); } catch { /* tx record may not exist for legacy expenses */ }
+        try { await deleteTransaction(tx.id); } catch { /* legacy expenses may not have tx record */ }
         if (tx.accountId) {
           const acc = accounts.find((a) => a.id === tx.accountId);
           if (acc) await updateAccount(tx.accountId, { balance: acc.balance + tx.amount });
@@ -296,7 +418,8 @@ export function History() {
         } else if (tx.type === 'debt' && !tx.isOld && tx.accountId) {
           const acc = accounts.find((a) => a.id === tx.accountId);
           if (acc) {
-            const delta = tx.debtType === 'taken' ? -tx.amount : tx.amount;
+            const remaining = tx.remainingAmount ?? tx.amount;
+            const delta = tx.debtType === 'taken' ? -remaining : remaining;
             await updateAccount(tx.accountId, { balance: acc.balance + delta });
           }
         }
@@ -305,6 +428,28 @@ export function History() {
       setDeletingId(null);
     }
   }, [deleteExpense, deleteTransaction, updateAccount, accounts]);
+
+  const handleEditTx = useCallback((tx: Transaction) => {
+    if (tx.type === 'income') setEditingIncome(tx);
+    else if (tx.type === 'transfer') setEditingTransfer(tx);
+  }, []);
+
+  const handleEditDebtFromSheet = useCallback(() => {
+    if (viewingDebt) {
+      const debtToEdit = viewingDebt;
+      setViewingDebt(null);
+      setEditingDebt(debtToEdit);
+    }
+  }, [viewingDebt]);
+
+  const totalFiltered = useMemo(() => {
+    const items = showDebtSection ? allItems : filteredNonDebt;
+    return items.reduce((sum, t) => {
+      if (t.type === 'income') return sum + t.amount;
+      if (t.type === 'expense') return sum - t.amount;
+      return sum;
+    }, 0);
+  }, [allItems, filteredNonDebt, showDebtSection]);
 
   if (loading) {
     return <GenericPageSkeleton />;
@@ -324,15 +469,10 @@ export function History() {
     );
   }
 
-  const totalFiltered = filtered.reduce((sum, t) => {
-    if (t.type === 'income') return sum + t.amount;
-    if (t.type === 'expense') return sum - t.amount;
-    return sum;
-  }, 0);
+  const hasContent = (showDebtSection && debtItems.length > 0) || (showDateGroups && groupedByDate.length > 0);
 
   return (
     <div className="space-y-5 pb-4 animate-page-in">
-      {/* Header */}
       <div className="flex items-center justify-between animate-fade-up stagger-1">
         <div>
           <p className="text-xs text-[#6B6B6B] uppercase tracking-widest mb-1">Records</p>
@@ -351,7 +491,6 @@ export function History() {
         </button>
       </div>
 
-      {/* Filter Pills */}
       {showFilter && (
         <div className="bg-[#1A1A1A] rounded-2xl p-3 border border-white/5 animate-fade-up">
           <div className="flex flex-wrap gap-2">
@@ -370,17 +509,18 @@ export function History() {
         </div>
       )}
 
-      {/* Summary line when filtered */}
-      {filterType !== 'all' && filtered.length > 0 && (filterType === 'income' || filterType === 'expense') && (
+      {filterType !== 'all' && (filterType === 'income' || filterType === 'expense') && filteredNonDebt.length > 0 && (
         <div className="bg-[#1A1A1A] rounded-2xl px-4 py-3 border border-white/5 flex items-center justify-between">
-          <span className="text-xs text-[#6B6B6B]">{filtered.length} {TYPE_FILTERS.find((f) => f.key === filterType)?.label}</span>
+          <span className="text-xs text-[#6B6B6B]">
+            {filteredNonDebt.length} {TYPE_FILTERS.find((f) => f.key === filterType)?.label}
+          </span>
           <span className={`text-sm font-semibold ${totalFiltered >= 0 ? 'text-emerald-400' : 'text-white'}`}>
             {totalFiltered >= 0 ? '+' : ''}{formatCurrency(Math.abs(totalFiltered), settings.currency)}
           </span>
         </div>
       )}
 
-      {filtered.length === 0 ? (
+      {!hasContent ? (
         <div className="flex flex-col items-center justify-center text-center min-h-[calc(100vh-260px)]">
           <p className="text-4xl mb-4">📭</p>
           <h3 className="text-base font-semibold text-white mb-2">No transactions found</h3>
@@ -389,27 +529,83 @@ export function History() {
           </p>
         </div>
       ) : (
-        <div className="space-y-5">
-          {groupedByDate.map(([date, dayTxs], i) => (
-            <div
-              key={date}
-              className="animate-fade-up"
-              style={{ animationDelay: `${Math.min(i * 50, 300)}ms` }}
-            >
-              <DayGroup
-                date={date}
-                dayTxs={dayTxs}
-                categoryMap={categoryMap}
-                accountMap={accountMap}
-                expenses={expenses}
-                currency={settings.currency}
-                deletingId={deletingId}
-                onEdit={setEditingExpense}
-                onDelete={handleDeleteTransaction}
-              />
+        <div className="space-y-6">
+          {showDebtSection && debtItems.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-medium text-[#6B6B6B] uppercase tracking-widest">Debts</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#6B6B6B]">
+                    {debtItems.filter((t) => t.status !== 'settled' && (t.remainingAmount ?? t.amount) > 0).length} active
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {debtItems.map((tx, i) => (
+                  <div
+                    key={tx.id}
+                    className="animate-fade-up"
+                    style={{ animationDelay: `${Math.min(i * 40, 200)}ms` }}
+                  >
+                    <DebtRow
+                      tx={tx}
+                      accountMap={accountMap}
+                      currency={settings.currency}
+                      deletingId={deletingId}
+                      onView={setViewingDebt}
+                      onDelete={handleDeleteTransaction}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          )}
+
+          {showDateGroups && groupedByDate.length > 0 && (
+            <div className="space-y-5">
+              {showDebtSection && debtItems.length > 0 && (
+                <div className="h-px bg-white/5" />
+              )}
+              {groupedByDate.map(([date, dayTxs], i) => (
+                <div
+                  key={date}
+                  className="animate-fade-up"
+                  style={{ animationDelay: `${Math.min(i * 50, 300)}ms` }}
+                >
+                  <DayGroup
+                    date={date}
+                    dayTxs={dayTxs}
+                    categoryMap={categoryMap}
+                    accountMap={accountMap}
+                    expenses={expenses}
+                    currency={settings.currency}
+                    deletingId={deletingId}
+                    onEdit={setEditingExpense}
+                    onEditTx={handleEditTx}
+                    onDelete={handleDeleteTransaction}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+      )}
+
+      {viewingDebt && (
+        <DebtDetailSheet
+          tx={viewingDebt}
+          onClose={() => setViewingDebt(null)}
+          onEdit={handleEditDebtFromSheet}
+        />
+      )}
+      {editingIncome && (
+        <EditIncomeModal tx={editingIncome} onClose={() => setEditingIncome(null)} />
+      )}
+      {editingTransfer && (
+        <EditTransferModal tx={editingTransfer} onClose={() => setEditingTransfer(null)} />
+      )}
+      {editingDebt && (
+        <EditDebtModal tx={editingDebt} onClose={() => setEditingDebt(null)} />
       )}
     </div>
   );

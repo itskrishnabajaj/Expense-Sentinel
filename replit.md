@@ -28,17 +28,25 @@ A premium personal expense tracking Progressive Web App (PWA).
 - **PWA**: manifest.json + Workbox service worker, installable on mobile
 
 **Architecture:**
-- DB version 2 with `accounts` and `transactions` stores alongside legacy `expenses`
+- DB version 3 with `accounts` and `transactions` stores alongside legacy `expenses`
+- V2→V3 migration: adds `remainingAmount`, `status`, `history` to debt transactions
+- `migrateIfNeeded()` runs on every app init (idempotent) and via "Update App" button
 - All money flows through accounts (cash/bank/savings) with balance tracking
 - FAB (bottom-right fixed button) is the primary entry point for all money actions
 - Legacy `expenses` store preserved for backward compat; new entries also write to `transactions`
+
+**Debt Lifecycle:**
+- New debts saved with `remainingAmount = amount`, `status = 'active'`, `history = []`
+- `DebtDetailSheet` modal: shows progress bar (paid/remaining), payment history, Pay Full / Pay Partial buttons
+- Pay Full/Partial: adjusts account balance (via `remainingAmount` net), records payment in `history[]`
+- `EditDebtModal`: reverses old balance effect, applies new, resets history if payments exist
 
 **Screens:**
 1. **Home** – Monthly summary, budget progress, top categories, recent expenses
 2. **Add Expense** – Custom numpad, category + account picker, date, note, one-tap save
 3. **Insights** – Pie chart + bar chart, weekly/monthly toggle, highlights
-4. **History** – All expenses grouped by date, filter by category, edit/delete
-5. **Settings** – Budget, accounts manager, category manager, CSV export, reset all data
+4. **History** – Date-grouped transactions + separate Debts section; filter pills; edit buttons for income/transfer; debt rows tap to open DebtDetailSheet
+5. **Settings** – Budget, accounts manager, category manager, CSV export, Update App, reset all data
 
 **Entry Modals (via FAB):**
 - **Expense** → navigates to /add page
@@ -46,11 +54,17 @@ A premium personal expense tracking Progressive Web App (PWA).
 - **Transfer** – TransferModal: numpad, from/to account pickers → moves balance
 - **Debt** – DebtModal: Borrowed/Lent toggle, numpad, account, note, date, isOld toggle
 
+**Edit Modals:**
+- **EditIncomeModal** – Pre-populated income form; reverses old balance, applies new
+- **EditTransferModal** – Pre-populated transfer form; uses delta-map for correct multi-account adjustments
+- **EditDebtModal** – Pre-populated debt form; warns about payment history reset; reverses/applies via delta-map
+- **DebtDetailSheet** – Opens from debt row in History; shows details + payment history + pay actions
+
 **Key files:**
-- `src/database/` – IndexedDB layer (db.ts, accounts.ts, transactions.ts, expenses.ts, categories.ts, settings.ts)
-- `src/context/AppContext.tsx` – Global state provider (accounts, transactions, expenses)
+- `src/database/` – IndexedDB layer (db.ts v3, accounts.ts, transactions.ts, expenses.ts, categories.ts, settings.ts)
+- `src/context/AppContext.tsx` – Global state provider; calls `migrateIfNeeded` on init
 - `src/pages/` – 5 screens
-- `src/components/` – BottomNav, FAB, Modal, AccountSheet, AccountFormModal, IncomeModal, TransferModal, DebtModal, CategoryIcon, InstallPrompt
+- `src/components/` – BottomNav, FAB, Modal, AccountSheet, AccountFormModal, IncomeModal, TransferModal, DebtModal, EditIncomeModal, EditTransferModal, EditDebtModal, DebtDetailSheet, CategoryIcon, InstallPrompt
 - `vite.config.ts` – PWA configuration with Workbox
 
 ## Key Commands

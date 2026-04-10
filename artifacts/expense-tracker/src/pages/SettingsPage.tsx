@@ -6,6 +6,7 @@ import {
   Pencil,
   Check,
   ChevronRight,
+  RefreshCw,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
@@ -13,7 +14,7 @@ import { CategoryFormModal, type CategoryFormData } from '../components/Category
 import { AccountFormModal, type AccountFormData } from '../components/AccountFormModal';
 import { GenericPageSkeleton } from '../components/Skeleton';
 import { exportToCSV } from '../utils/export';
-import { Category, Account } from '../database';
+import { Category, Account, migrateIfNeeded, APP_VERSION } from '../database';
 import { formatCurrency } from '../utils/formatters';
 
 const TYPE_ICONS: Record<string, string> = { cash: '💵', bank: '🏦', savings: '💰' };
@@ -30,6 +31,8 @@ export function SettingsPage() {
   const [budgetSaved, setBudgetSaved] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [updateDone, setUpdateDone] = useState(false);
 
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -68,6 +71,18 @@ export function SettingsPage() {
       setShowResetConfirm(false);
     } finally {
       setResetting(false);
+    }
+  };
+
+  const handleUpdateApp = async () => {
+    setUpdating(true);
+    setUpdateDone(false);
+    try {
+      await migrateIfNeeded();
+      setUpdateDone(true);
+      setTimeout(() => setUpdateDone(false), 3000);
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -275,6 +290,26 @@ export function SettingsPage() {
         </button>
         <div className="h-px bg-white/5 mx-3" />
         <button
+          onClick={handleUpdateApp}
+          disabled={updating}
+          className="w-full flex items-center gap-3 px-3 py-3.5 rounded-xl active:bg-white/5 transition-colors disabled:opacity-60"
+        >
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${updateDone ? 'bg-emerald-500/10' : 'bg-emerald-500/10'}`}>
+            {updateDone
+              ? <Check size={15} className="text-emerald-400" />
+              : <RefreshCw size={15} className={`text-emerald-400 ${updating ? 'animate-spin' : ''}`} />
+            }
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-medium text-white">
+              {updateDone ? 'Up to Date!' : updating ? 'Updating…' : 'Update App'}
+            </p>
+            <p className="text-xs text-[#6B6B6B]">Migrate data to v{APP_VERSION}</p>
+          </div>
+          {!updating && !updateDone && <ChevronRight size={15} className="text-[#6B6B6B]" />}
+        </button>
+        <div className="h-px bg-white/5 mx-3" />
+        <button
           onClick={() => setShowResetConfirm(true)}
           className="w-full flex items-center gap-3 px-3 py-3.5 rounded-xl active:bg-red-500/5 transition-colors"
         >
@@ -290,7 +325,7 @@ export function SettingsPage() {
       </div>
 
       <div className="text-center py-4">
-        <p className="text-xs text-[#444444]">Expense Tracker v2.0</p>
+        <p className="text-xs text-[#444444]">Expense Tracker v{APP_VERSION}</p>
         <p className="text-xs text-[#333333] mt-1">All data stored locally on your device</p>
       </div>
 

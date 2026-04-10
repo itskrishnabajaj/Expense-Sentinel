@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode, useState, useEffect, useCallback, useMemo } from 'react';
-import { Expense, Category, Account, Transaction } from '../database';
+import { Expense, Category, Account, Transaction, migrateIfNeeded } from '../database';
 import { getExpenses, addExpense, updateExpense, deleteExpense } from '../database/expenses';
 import { getCategories, addCategory, updateCategory, deleteCategory } from '../database/categories';
 import { getAllSettings, setSetting, clearAllData, AppSettings, SETTINGS_DEFAULTS } from '../database/settings';
@@ -56,6 +56,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
+      await migrateIfNeeded();
       await ensureDefaultAccount();
       const [expData, catData, setData, accData, txData] = await Promise.all([
         getExpenses(),
