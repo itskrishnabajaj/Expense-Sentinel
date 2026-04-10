@@ -1,13 +1,15 @@
 import { useState, useCallback } from 'react';
-import { X, Delete, Check } from 'lucide-react';
+import { X, Delete, Check, ChevronDown } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
 import { TapButton } from './TapButton';
+import { AccountSheet } from './AccountSheet';
 import { useApp } from '../context/AppContext';
 import { Transaction } from '../database';
 import { formatCurrency, formatDate, formatAmountRaw, getCurrencySymbol } from '../utils/formatters';
 import { getTodayString } from '../utils/formatters';
 
 const NUMPAD_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'backspace'];
+const TYPE_ICONS: Record<string, string> = { cash: '💵', bank: '🏦', savings: '💰' };
 
 function DebtDetailInner({
   tx,
@@ -24,6 +26,10 @@ function DebtDetailInner({
 
   const [mode, setMode] = useState<'detail' | 'partial'>('detail');
   const [partialAmount, setPartialAmount] = useState('');
+  const [payAccountId, setPayAccountId] = useState<string>(
+    tx.accountId ?? accounts[0]?.id ?? ''
+  );
+  const [showAccountSheet, setShowAccountSheet] = useState(false);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
@@ -33,7 +39,9 @@ function DebtDetailInner({
   const paid = total - remaining;
   const pct = total > 0 ? Math.max(0, Math.min(100, (paid / total) * 100)) : 0;
   const isSettled = tx.status === 'settled' || remaining <= 0;
-  const account = accounts.find((a) => a.id === tx.accountId);
+
+  const payAccount = accounts.find((a) => a.id === payAccountId);
+  const accountLabel = tx.debtType === 'taken' ? 'Pay from' : 'Receive into';
 
   const handleNumKey = useCallback((key: string) => {
     setPartialAmount((prev) => {
@@ -50,13 +58,16 @@ function DebtDetailInner({
     });
   }, []);
 
-  const applyPayment = useCallback(async (paidAmount: number, note: string) => {
+  const applyPayment = useCallback(async (paidAmount: number, note: string, accountId: string) => {
     const newRemaining = Math.max(0, parseFloat((remaining - paidAmount).toFixed(2)));
     const newStatus: 'active' | 'settled' = newRemaining === 0 ? 'settled' : 'active';
 
-    if (!tx.isOld && account) {
-      const balanceDelta = tx.debtType === 'taken' ? -paidAmount : paidAmount;
-      await updateAccount(account.id, { balance: account.balance + balanceDelta });
+    if (!tx.isOld) {
+      const acc = accounts.find((a) => a.id === accountId);
+      if (acc) {
+        const balanceDelta = tx.debtType === 'taken' ? -paidAmount : paidAmount;
+        await updateAccount(acc.id, { balance: acc.balance + balanceDelta });
+      }
     }
 
     const payment = {
@@ -72,34 +83,34 @@ function DebtDetailInner({
       status: newStatus,
       history: [...(tx.history ?? []), payment],
     });
-  }, [tx, remaining, account, updateAccount, updateTransaction]);
+  }, [tx, remaining, accounts, updateAccount, updateTransaction]);
 
   const handlePayFull = useCallback(async () => {
     if (isSettled || saving || remaining <= 0) return;
     setSaving(true);
     try {
-      await applyPayment(remaining, 'Paid in full');
+      await applyPayment(remaining, 'Paid in full', payAccountId);
       setSuccessMsg('Debt Settled!');
       setSuccess(true);
       setTimeout(() => onCloseClean(), 700);
     } finally {
       setSaving(false);
     }
-  }, [remaining, isSettled, saving, applyPayment, onCloseClean]);
+  }, [remaining, isSettled, saving, applyPayment, payAccountId, onCloseClean]);
 
   const handlePayPartial = useCallback(async () => {
     const paid = parseFloat(partialAmount);
     if (!paid || paid <= 0 || paid > remaining || saving) return;
     setSaving(true);
     try {
-      await applyPayment(paid, '');
+      await applyPayment(paid, '', payAccountId);
       setSuccessMsg('Payment Recorded!');
       setSuccess(true);
       setTimeout(() => onCloseClean(), 700);
     } finally {
       setSaving(false);
     }
-  }, [partialAmount, remaining, saving, applyPayment, onCloseClean]);
+  }, [partialAmount, remaining, saving, applyPayment, payAccountId, onCloseClean]);
 
   if (success) {
     return (
@@ -112,6 +123,20 @@ function DebtDetailInner({
       </div>
     );
   }
+
+  const AccountSelector = () => (
+    <TapButton
+      onTap={() => setShowAccountSheet(true)}
+      className="w-full bg-[#111111] border border-white/5 rounded-xl p-3.5 flex items-center gap-3 active:bg-[#1A1A1A]"
+    >
+      <span className="text-lg">{TYPE_ICONS[payAccount?.type ?? 'cash'] ?? '💳'}</span>
+      <div className="flex-1 text-left">
+        <p className="text-xs text-[#6B6B6B]">{accountLabel}</p>
+        <p className="text-sm font-medium text-white">{payAccount?.name ?? 'Select account'}</p>
+      </div>
+      <ChevronDown size={16} className="text-[#6B6B6B]" />
+    </TapButton>
+  );
 
   if (mode === 'partial') {
     const partialParsed = parseFloat(partialAmount);
@@ -165,6 +190,8 @@ function DebtDetailInner({
               </TapButton>
             ))}
           </div>
+
+          <AccountSelector />
         </div>
 
         <div className="px-5 py-4 flex-shrink-0 border-t border-white/5">
@@ -180,6 +207,17 @@ function DebtDetailInner({
             {saving ? 'Recording…' : 'Record Payment'}
           </TapButton>
         </div>
+
+        {showAccountSheet && (
+          <AccountSheet
+            accounts={accounts}
+            currentAccountId={payAccountId}
+            title={accountLabel}
+            currency={settings.currency}
+            onConfirm={(id) => { setPayAccountId(id); setShowAccountSheet(false); }}
+            onClose={() => setShowAccountSheet(false)}
+          />
+        )}
       </>
     );
   }
@@ -209,7 +247,6 @@ function DebtDetailInner({
           </div>
           <p className="text-2xl font-bold text-white mt-2">{formatCurrency(total, settings.currency)}</p>
           {tx.note && <p className="text-xs text-[#6B6B6B] mt-1">{tx.note}</p>}
-          {account && <p className="text-xs text-[#6B6B6B] mt-0.5">{account.name}</p>}
           <p className="text-xs text-[#444] mt-1">{formatDate(tx.date)}</p>
         </div>
 
@@ -269,6 +306,7 @@ function DebtDetailInner({
       <div className="px-5 py-4 flex-shrink-0 border-t border-white/5 space-y-2">
         {!isSettled && (
           <>
+            <AccountSelector />
             <TapButton
               onTap={handlePayFull}
               disabled={saving}
@@ -294,6 +332,17 @@ function DebtDetailInner({
           Edit Debt
         </TapButton>
       </div>
+
+      {showAccountSheet && (
+        <AccountSheet
+          accounts={accounts}
+          currentAccountId={payAccountId}
+          title={accountLabel}
+          currency={settings.currency}
+          onConfirm={(id) => { setPayAccountId(id); setShowAccountSheet(false); }}
+          onClose={() => setShowAccountSheet(false)}
+        />
+      )}
     </>
   );
 }

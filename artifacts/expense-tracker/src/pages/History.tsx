@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback, memo } from 'react';
-import { Trash2, Pencil, X, Filter, TrendingUp, ArrowLeftRight, AlertCircle, ShoppingBag } from 'lucide-react';
+import { useState, useMemo, useCallback, memo, useEffect, useRef } from 'react';
+import { Trash2, Pencil, X, Filter, Search, TrendingUp, ArrowLeftRight, AlertCircle, ShoppingBag } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { GenericPageSkeleton } from '../components/Skeleton';
@@ -375,6 +375,15 @@ export function History() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
   const [settledOpen, setSettledOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchDebounced, setSearchDebounced] = useState('');
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => setSearchDebounced(searchQuery), 250);
+    return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+  }, [searchQuery]);
 
   const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
   const accountMap = useMemo(
@@ -397,10 +406,26 @@ export function History() {
     }));
   }, [transactions, expenses]);
 
-  const debtItems = useMemo(() => allItems.filter((t) => t.type === 'debt'), [allItems]);
-  const expenseItems = useMemo(() => allItems.filter((t) => t.type === 'expense'), [allItems]);
-  const incomeItems = useMemo(() => allItems.filter((t) => t.type === 'income'), [allItems]);
-  const transferItems = useMemo(() => allItems.filter((t) => t.type === 'transfer'), [allItems]);
+  const filteredItems = useMemo(() => {
+    if (!searchDebounced) return allItems;
+    const q = searchDebounced.toLowerCase();
+    return allItems.filter((tx) => {
+      if (tx.note?.toLowerCase().includes(q)) return true;
+      if (tx.type.includes(q)) return true;
+      const cat = tx.categoryId ? categoryMap.get(tx.categoryId) : undefined;
+      if (cat?.name.toLowerCase().includes(q)) return true;
+      const accNames = [tx.accountId, tx.fromAccountId, tx.toAccountId]
+        .filter(Boolean)
+        .map((id) => accountMap.get(id!)?.name?.toLowerCase() ?? '');
+      if (accNames.some((n) => n.includes(q))) return true;
+      return false;
+    });
+  }, [searchDebounced, allItems, categoryMap, accountMap]);
+
+  const debtItems = useMemo(() => filteredItems.filter((t) => t.type === 'debt'), [filteredItems]);
+  const expenseItems = useMemo(() => filteredItems.filter((t) => t.type === 'expense'), [filteredItems]);
+  const incomeItems = useMemo(() => filteredItems.filter((t) => t.type === 'income'), [filteredItems]);
+  const transferItems = useMemo(() => filteredItems.filter((t) => t.type === 'transfer'), [filteredItems]);
 
   const activeDebts = useMemo(
     () => debtItems.filter((t) => t.status !== 'settled' && (t.remainingAmount ?? t.amount) > 0),
@@ -472,13 +497,13 @@ export function History() {
     const items =
       filterType === 'income' ? incomeItems :
       filterType === 'expense' ? expenseItems :
-      allItems;
+      filteredItems;
     return items.reduce((sum, t) => {
       if (t.type === 'income') return sum + t.amount;
       if (t.type === 'expense') return sum - t.amount;
       return sum;
     }, 0);
-  }, [filterType, allItems, incomeItems, expenseItems]);
+  }, [filterType, filteredItems, incomeItems, expenseItems]);
 
   if (loading) {
     return <GenericPageSkeleton />;
@@ -548,6 +573,23 @@ export function History() {
         </button>
       </div>
 
+      <div className="relative animate-fade-up stagger-2">
+        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B6B6B] pointer-events-none" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search transactions…"
+          className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl pl-9 pr-9 py-2.5 text-sm text-white placeholder:text-[#444] outline-none"
+          style={{ userSelect: 'text', touchAction: 'auto' }}
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5">
+            <X size={14} className="text-[#6B6B6B]" />
+          </button>
+        )}
+      </div>
+
       {showFilter && (
         <div className="bg-[#1A1A1A] rounded-2xl p-3 border border-white/5 animate-fade-up">
           <div className="flex flex-wrap gap-2">
@@ -582,9 +624,11 @@ export function History() {
       {!hasContent ? (
         <div className="flex flex-col items-center justify-center text-center min-h-[calc(100vh-260px)]">
           <p className="text-4xl mb-4">📭</p>
-          <h3 className="text-base font-semibold text-white mb-2">No transactions found</h3>
+          <h3 className="text-base font-semibold text-white mb-2">
+            {searchDebounced ? `No results for "${searchDebounced}"` : 'No transactions found'}
+          </h3>
           <p className="text-sm text-[#6B6B6B]">
-            {filterType !== 'all' ? 'Try a different filter' : 'Start recording transactions to see them here'}
+            {searchDebounced ? 'Try a different search term' : filterType !== 'all' ? 'Try a different filter' : 'Start recording transactions to see them here'}
           </p>
         </div>
       ) : (

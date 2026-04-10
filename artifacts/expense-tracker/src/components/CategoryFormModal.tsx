@@ -10,9 +10,9 @@ export const CATEGORY_ICONS = [
 ];
 
 export const CATEGORY_COLORS = [
-  '#F97316', '#3B82F6', '#EC4899', '#8B5CF6',
-  '#10B981', '#F59E0B', '#06B6D4', '#6366F1',
-  '#84CC16', '#6B7280', '#EF4444', '#14B8A6',
+  '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16', '#22C55E',
+  '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7',
+  '#EC4899', '#D946EF', '#14B8A6', '#64748B', '#6B7280', '#B45309',
 ];
 
 export interface CategoryFormData {
@@ -183,14 +183,13 @@ function CategoryFormInner({
           >
             Color
           </label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
             {CATEGORY_COLORS.map((color) => (
               <TapButton
                 key={color}
                 onTap={() => onFormChange({ ...form, color })}
                 style={{
-                  width: 36,
-                  height: 36,
+                  aspectRatio: '1',
                   borderRadius: '10px',
                   backgroundColor: color,
                   border: 'none',
