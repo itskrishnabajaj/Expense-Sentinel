@@ -198,6 +198,13 @@ async function runMigrationV3(db: IDBPDatabase): Promise<void> {
 export async function migrateIfNeeded(): Promise<boolean> {
   const db = await getDB();
 
+  const versionRecord = await db.get('settings', 'appVersion');
+  const storedVersion = versionRecord?.value as string | undefined;
+
+  if (storedVersion === APP_VERSION) {
+    return false;
+  }
+
   const allTransactions: Transaction[] = await db.getAll('transactions');
   const needsPatch = allTransactions.filter(
     (t) =>

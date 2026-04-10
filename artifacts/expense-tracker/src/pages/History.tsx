@@ -244,6 +244,7 @@ const DebtRow = memo(function DebtRow({
   currency,
   deletingId,
   onView,
+  onEdit,
   onDelete,
 }: {
   tx: Transaction;
@@ -251,6 +252,7 @@ const DebtRow = memo(function DebtRow({
   currency: string;
   deletingId: string | null;
   onView: (tx: Transaction) => void;
+  onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
 }) {
   const remaining = tx.remainingAmount ?? tx.amount;
@@ -260,9 +262,12 @@ const DebtRow = memo(function DebtRow({
   const account = tx.accountId ? accountMap.get(tx.accountId) : undefined;
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onView(tx)}
-      className="w-full bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.2)] card-press text-left"
+      onKeyDown={(e) => e.key === 'Enter' && onView(tx)}
+      className="w-full bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.2)] card-press text-left cursor-pointer"
     >
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -270,40 +275,48 @@ const DebtRow = memo(function DebtRow({
           <AlertCircle size={17} className="text-amber-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-medium text-white truncate">
-              {tx.note || (tx.debtType === 'taken' ? 'Borrowed' : 'Lent')}
-            </p>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                isSettled
-                  ? 'bg-emerald-500/15 text-emerald-400'
-                  : 'bg-amber-500/15 text-amber-400'
-              }`}>
-                {isSettled ? 'Settled' : 'Active'}
-              </span>
-              <span className="text-sm font-semibold"
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">
+                {tx.note || (tx.debtType === 'taken' ? 'Borrowed' : 'Lent')}
+              </p>
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  isSettled
+                    ? 'bg-emerald-500/15 text-emerald-400'
+                    : 'bg-amber-500/15 text-amber-400'
+                }`}>
+                  {isSettled ? 'Settled' : 'Active'}
+                </span>
+                {account && (
+                  <p className="text-xs text-[#6B6B6B]">
+                    {ACCOUNT_TYPE_ICONS[account.type] ?? '💳'} {account.name}
+                  </p>
+                )}
+                <p className="text-xs text-[#6B6B6B]">{formatDate(tx.date)}</p>
+              </div>
+            </div>
+            <div className="flex items-center flex-shrink-0">
+              <span className="text-sm font-semibold mr-1"
                 style={{ color: tx.debtType === 'taken' ? '#34D399' : '#F87171' }}>
                 {tx.debtType === 'taken' ? '+' : '-'}{formatCurrency(total, currency)}
               </span>
-              <Trash2
-                size={14}
-                className="text-[#6B6B6B] ml-1"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(tx);
-                }}
-              />
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit(tx); }}
+                className="min-w-[40px] min-h-[40px] flex items-center justify-center text-[#6B6B6B] rounded-lg"
+                aria-label="Edit debt"
+              >
+                <Pencil size={13} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(tx); }}
+                disabled={deletingId === tx.id}
+                className="min-w-[40px] min-h-[40px] flex items-center justify-center text-[#6B6B6B] rounded-lg disabled:opacity-40"
+                aria-label="Delete debt"
+              >
+                <Trash2 size={13} />
+              </button>
             </div>
-          </div>
-          <div className="flex items-center gap-2 mt-1">
-            {account && (
-              <p className="text-xs text-[#6B6B6B]">
-                {ACCOUNT_TYPE_ICONS[account.type] ?? '💳'} {account.name}
-              </p>
-            )}
-            <p className="text-xs text-[#6B6B6B]">·</p>
-            <p className="text-xs text-[#6B6B6B]">{formatDate(tx.date)}</p>
           </div>
           {!isSettled && (
             <div className="mt-2.5 space-y-1">
@@ -327,7 +340,7 @@ const DebtRow = memo(function DebtRow({
           )}
         </div>
       </div>
-    </button>
+    </div>
   );
 });
 
@@ -352,6 +365,7 @@ export function History() {
   const [viewingDebt, setViewingDebt] = useState<Transaction | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
+  const [settledOpen, setSettledOpen] = useState(false);
 
   const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
   const accountMap = useMemo(
@@ -376,6 +390,14 @@ export function History() {
 
   const nonDebtItems = useMemo(() => allItems.filter((t) => t.type !== 'debt'), [allItems]);
   const debtItems = useMemo(() => allItems.filter((t) => t.type === 'debt'), [allItems]);
+  const activeDebts = useMemo(
+    () => debtItems.filter((t) => t.status !== 'settled' && (t.remainingAmount ?? t.amount) > 0),
+    [debtItems]
+  );
+  const settledDebts = useMemo(
+    () => debtItems.filter((t) => t.status === 'settled' || (t.remainingAmount ?? t.amount) <= 0),
+    [debtItems]
+  );
 
   const filteredNonDebt = useMemo(() => {
     if (filterType === 'all' || filterType === 'debt') return nonDebtItems;
@@ -534,14 +556,11 @@ export function History() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-medium text-[#6B6B6B] uppercase tracking-widest">Debts</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#6B6B6B]">
-                    {debtItems.filter((t) => t.status !== 'settled' && (t.remainingAmount ?? t.amount) > 0).length} active
-                  </span>
-                </div>
+                <span className="text-xs text-[#6B6B6B]">{activeDebts.length} active</span>
               </div>
+
               <div className="space-y-2">
-                {debtItems.map((tx, i) => (
+                {activeDebts.map((tx, i) => (
                   <div
                     key={tx.id}
                     className="animate-fade-up"
@@ -553,11 +572,48 @@ export function History() {
                       currency={settings.currency}
                       deletingId={deletingId}
                       onView={setViewingDebt}
+                      onEdit={setEditingDebt}
                       onDelete={handleDeleteTransaction}
                     />
                   </div>
                 ))}
               </div>
+
+              {settledDebts.length > 0 && (
+                <div className="mt-3">
+                  <button
+                    onClick={() => setSettledOpen((o) => !o)}
+                    className="flex items-center gap-1.5 text-xs text-[#6B6B6B] mb-2 hover:text-[#A0A0A0] transition-colors"
+                  >
+                    <span
+                      className="transition-transform duration-200"
+                      style={{ display: 'inline-block', transform: settledOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                    >▶</span>
+                    {settledDebts.length} settled
+                  </button>
+                  {settledOpen && (
+                    <div className="space-y-2">
+                      {settledDebts.map((tx, i) => (
+                        <div
+                          key={tx.id}
+                          className="animate-fade-up opacity-60"
+                          style={{ animationDelay: `${Math.min(i * 40, 200)}ms` }}
+                        >
+                          <DebtRow
+                            tx={tx}
+                            accountMap={accountMap}
+                            currency={settings.currency}
+                            deletingId={deletingId}
+                            onView={setViewingDebt}
+                            onEdit={setEditingDebt}
+                            onDelete={handleDeleteTransaction}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

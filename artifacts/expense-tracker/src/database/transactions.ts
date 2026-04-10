@@ -57,6 +57,13 @@ export async function getTransactionsByType(type: Transaction['type']): Promise<
   return all.sort((a, b) => b.createdAt - a.createdAt);
 }
 
+export async function updateDebt(
+  id: string,
+  data: Partial<Pick<Transaction, 'remainingAmount' | 'status' | 'history' | 'amount' | 'accountId' | 'note' | 'date' | 'debtType' | 'isOld'>>
+): Promise<Transaction | null> {
+  return updateTransaction(id, data);
+}
+
 export async function addDebtPayment(
   debtId: string,
   payment: Omit<DebtPayment, 'id' | 'createdAt'>,

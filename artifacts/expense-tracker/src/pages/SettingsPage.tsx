@@ -24,7 +24,7 @@ export function SettingsPage() {
     settings, categories, accounts, loading,
     updateSetting, addCategory, updateCategory, deleteCategory,
     addAccount, updateAccount, deleteAccount,
-    clearAll, expenses,
+    clearAll, expenses, refresh,
   } = useApp();
 
   const [budgetInput, setBudgetInput] = useState(String(settings.monthly_budget));
@@ -79,6 +79,7 @@ export function SettingsPage() {
     setUpdateDone(false);
     try {
       await migrateIfNeeded();
+      await refresh();
       setUpdateDone(true);
       setTimeout(() => setUpdateDone(false), 3000);
     } finally {
