@@ -313,8 +313,8 @@ const DebtRow = memo(function DebtRow({
               </span>
               <button
                 onPointerDown={(e) => e.stopPropagation()}
-                onPointerUp={(e) => { e.stopPropagation(); onEdit(tx); }}
-                onClick={(e) => e.stopPropagation()}
+                onPointerUp={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); onEdit(tx); }}
                 className="min-w-[40px] min-h-[40px] flex items-center justify-center text-[#6B6B6B] rounded-lg active:text-white"
                 aria-label="Edit debt"
               >
@@ -322,8 +322,8 @@ const DebtRow = memo(function DebtRow({
               </button>
               <button
                 onPointerDown={(e) => e.stopPropagation()}
-                onPointerUp={(e) => { e.stopPropagation(); if (deletingId !== tx.id) onDelete(tx); }}
-                onClick={(e) => e.stopPropagation()}
+                onPointerUp={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); onDelete(tx); }}
                 disabled={deletingId === tx.id}
                 className="min-w-[40px] min-h-[40px] flex items-center justify-center text-[#6B6B6B] rounded-lg disabled:opacity-40 active:text-white"
                 aria-label="Delete debt"
