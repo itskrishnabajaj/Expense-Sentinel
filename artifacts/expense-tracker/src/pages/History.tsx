@@ -318,12 +318,13 @@ const DebtRow = memo(function DebtRow({
                 <p className="text-xs text-[#6B6B6B]">{formatDate(tx.date)}</p>
               </div>
             </div>
-            <div className="flex items-center flex-shrink-0" data-debt-action>
+            <div className="flex items-center flex-shrink-0">
               <span className="text-sm font-semibold mr-1"
                 style={{ color: tx.debtType === 'taken' ? '#34D399' : '#F87171' }}>
                 {tx.debtType === 'taken' ? '+' : '-'}{formatCurrency(total, currency)}
               </span>
               <button
+                data-debt-action
                 onClick={(e) => { e.stopPropagation(); onEdit(tx); }}
                 className="relative z-10 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg active:text-white"
                 aria-label="Edit debt"
@@ -331,6 +332,7 @@ const DebtRow = memo(function DebtRow({
                 <Pencil size={13} />
               </button>
               <button
+                data-debt-action
                 onClick={(e) => { e.stopPropagation(); onDelete(tx); }}
                 disabled={deletingId === tx.id}
                 className="relative z-10 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg disabled:opacity-40 active:text-white"
