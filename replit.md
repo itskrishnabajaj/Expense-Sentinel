@@ -65,11 +65,17 @@ A premium personal expense tracking Progressive Web App (PWA).
 - **EditDebtModal** – Pre-populated debt form; warns about payment history reset; reverses/applies via delta-map
 - **DebtDetailSheet** – Opens from debt row in History; shows details + payment history + pay actions
 
+**Shared Utilities (from Task #2 refactor):**
+- `src/utils/constants.ts` – `ACCOUNT_TYPE_ICONS`, `NUMPAD_KEYS` (shared across all modals/pages)
+- `src/utils/dateFilters.ts` – `filterByMonth`, `filterByThisWeek`, `filterByLastWeek` (used by Home, Insights)
+- `src/components/Numpad.tsx` – `Numpad` component + `useNumpadInput` hook (used by AddExpense, IncomeModal, TransferModal, DebtModal; DebtDetailSheet uses its own inline numpad)
+- `src/components/TransactionDisplay.tsx` – `TxIcon`, `TxAmount`, `getTxLabel`, `getTxAmountInfo` (used by Home, History)
+
 **Key files:**
 - `src/database/` – IndexedDB layer (db.ts v3, accounts.ts, transactions.ts, expenses.ts, categories.ts, settings.ts)
 - `src/context/AppContext.tsx` – Global state provider; calls `migrateIfNeeded` on init
 - `src/pages/` – 5 screens
-- `src/components/` – BottomNav, FAB, Modal, ConfirmDeleteModal, AccountSheet, AccountFormModal, IncomeModal, TransferModal, DebtModal, EditIncomeModal, EditTransferModal, EditDebtModal, DebtDetailSheet, CategoryIcon, InstallPrompt
+- `src/components/` – BottomNav, FAB, Modal, ConfirmDeleteModal, AccountSheet, AccountFormModal, IncomeModal, TransferModal, DebtModal, EditIncomeModal, EditTransferModal, EditDebtModal, DebtDetailSheet, CategoryIcon, InstallPrompt, Numpad, TransactionDisplay
 - `src/context/UndoContext.tsx` – Undo stack (5 items, 5s TTL) with toast UI; `pushUndo(label, asyncFn)` for ephemeral undo
 - `vite.config.ts` – PWA configuration with Workbox
 

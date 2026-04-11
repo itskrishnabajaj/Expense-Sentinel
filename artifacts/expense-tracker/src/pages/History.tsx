@@ -1,8 +1,7 @@
 import { useState, useMemo, useCallback, memo, useEffect, useRef } from 'react';
-import { Trash2, Pencil, X, Filter, Search, TrendingUp, ArrowLeftRight, AlertCircle, ShoppingBag } from 'lucide-react';
+import { Trash2, Pencil, X, Filter, Search, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useUndo } from '../context/UndoContext';
-import { CategoryIcon } from '../components/CategoryIcon';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { GenericPageSkeleton } from '../components/Skeleton';
 import { AddExpense } from './AddExpense';
@@ -10,7 +9,9 @@ import { EditIncomeModal } from '../components/EditIncomeModal';
 import { EditTransferModal } from '../components/EditTransferModal';
 import { EditDebtModal } from '../components/EditDebtModal';
 import { DebtDetailSheet } from '../components/DebtDetailSheet';
+import { TxIcon, getTxAmountInfo } from '../components/TransactionDisplay';
 import { formatCurrency, formatDate } from '../utils/formatters';
+import { ACCOUNT_TYPE_ICONS } from '../utils/constants';
 import { Expense, Transaction, Category, getDB } from '../database';
 
 function groupByDate(items: Transaction[]): [string, Transaction[]][] {
@@ -31,44 +32,6 @@ const TYPE_FILTERS = [
 ] as const;
 
 type FilterKey = typeof TYPE_FILTERS[number]['key'];
-
-const ACCOUNT_TYPE_ICONS: Record<string, string> = { cash: '💵', bank: '🏦', savings: '💰' };
-
-function TxTypeIcon({ tx, catIcon, catColor }: { tx: Transaction; catIcon?: string; catColor?: string }) {
-  switch (tx.type) {
-    case 'income':
-      return (
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(16,185,129,0.12)' }}>
-          <TrendingUp size={17} className="text-emerald-400" />
-        </div>
-      );
-    case 'transfer':
-      return (
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(59,130,246,0.12)' }}>
-          <ArrowLeftRight size={17} className="text-blue-400" />
-        </div>
-      );
-    case 'debt':
-      return (
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(245,158,11,0.12)' }}>
-          <AlertCircle size={17} className="text-amber-400" />
-        </div>
-      );
-    default:
-      if (catIcon && catColor) {
-        return <CategoryIcon icon={catIcon} color={catColor} size="md" />;
-      }
-      return (
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(239,68,68,0.12)' }}>
-          <ShoppingBag size={17} className="text-red-400" />
-        </div>
-      );
-  }
-}
 
 function txSubLabel(tx: Transaction, accountMap: Map<string, { name: string; type: string }>, catName?: string) {
   switch (tx.type) {
@@ -101,22 +64,6 @@ function txTitle(tx: Transaction, catName?: string) {
   }
 }
 
-function txAmountLabel(tx: Transaction, currency: string) {
-  switch (tx.type) {
-    case 'income':
-      return { label: `+${formatCurrency(tx.amount, currency)}`, color: '#34D399' };
-    case 'expense':
-      return { label: `-${formatCurrency(tx.amount, currency)}`, color: '#ffffff' };
-    case 'transfer':
-      return { label: formatCurrency(tx.amount, currency), color: '#60A5FA' };
-    case 'debt':
-      return {
-        label: `${tx.debtType === 'taken' ? '+' : '-'}${formatCurrency(tx.amount, currency)}`,
-        color: tx.debtType === 'taken' ? '#34D399' : '#F87171',
-      };
-  }
-}
-
 const TxRow = memo(function TxRow({
   tx,
   categoryMap,
@@ -139,13 +86,13 @@ const TxRow = memo(function TxRow({
   onDelete: (tx: Transaction) => void;
 }) {
   const cat = tx.categoryId ? categoryMap.get(tx.categoryId) : undefined;
-  const amtInfo = txAmountLabel(tx, currency);
+  const amtInfo = getTxAmountInfo(tx, currency);
   const isExpenseTx = tx.type === 'expense';
   const isEditable = tx.type === 'income' || tx.type === 'transfer';
 
   return (
     <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
-      <TxTypeIcon tx={tx} catIcon={cat?.icon} catColor={cat?.color} />
+      <TxIcon tx={tx} categoryIcon={cat?.icon} categoryColor={cat?.color} size="md" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-white truncate">{txTitle(tx, cat?.name)}</p>
         <p className="text-xs text-[#6B6B6B] mt-0.5 truncate">{txSubLabel(tx, accountMap, cat?.name)}</p>

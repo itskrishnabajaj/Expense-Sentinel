@@ -7,90 +7,17 @@ import {
   Wallet,
   Calendar,
   TrendingUp,
-  ArrowLeftRight,
-  AlertCircle,
-  ShoppingBag,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { BudgetProgress } from '../components/BudgetProgress';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { AnimatedCurrency } from '../components/AnimatedCurrency';
 import { HomePageSkeleton } from '../components/Skeleton';
+import { TxIcon, getTxLabel, TxAmount } from '../components/TransactionDisplay';
 import { formatCurrency, getMonthName } from '../utils/formatters';
+import { ACCOUNT_TYPE_ICONS } from '../utils/constants';
+import { filterByMonth } from '../utils/dateFilters';
 import { Transaction, Account, Category } from '../database';
-
-const ACCOUNT_TYPE_ICONS: Record<string, string> = { cash: '💵', bank: '🏦', savings: '💰' };
-
-function txIcon(tx: Transaction, categoryIcon?: string, categoryColor?: string) {
-  switch (tx.type) {
-    case 'income':
-      return (
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(16,185,129,0.12)' }}>
-          <TrendingUp size={16} className="text-emerald-400" />
-        </div>
-      );
-    case 'transfer':
-      return (
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(59,130,246,0.12)' }}>
-          <ArrowLeftRight size={16} className="text-blue-400" />
-        </div>
-      );
-    case 'debt':
-      return (
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(245,158,11,0.12)' }}>
-          <AlertCircle size={16} className="text-amber-400" />
-        </div>
-      );
-    default:
-      if (categoryIcon && categoryColor) {
-        return <CategoryIcon icon={categoryIcon} color={categoryColor} size="sm" />;
-      }
-      return (
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(239,68,68,0.12)' }}>
-          <ShoppingBag size={16} className="text-red-400" />
-        </div>
-      );
-  }
-}
-
-function txAmount(tx: Transaction, currency: string) {
-  switch (tx.type) {
-    case 'income':
-      return <span className="text-sm font-semibold text-emerald-400">+{formatCurrency(tx.amount, currency)}</span>;
-    case 'expense':
-      return <span className="text-sm font-semibold text-white">-{formatCurrency(tx.amount, currency)}</span>;
-    case 'transfer':
-      return <span className="text-sm font-semibold text-blue-400">{formatCurrency(tx.amount, currency)}</span>;
-    case 'debt':
-      return (
-        <span className="text-sm font-semibold" style={{ color: tx.debtType === 'taken' ? '#34D399' : '#F87171' }}>
-          {tx.debtType === 'taken' ? '+' : '-'}{formatCurrency(tx.amount, currency)}
-        </span>
-      );
-  }
-}
-
-function txLabel(tx: Transaction, accountMap: Map<string, string>, categoryMap: Map<string, { name: string; icon: string; color: string }>) {
-  switch (tx.type) {
-    case 'income':
-      return tx.note || 'Income';
-    case 'expense': {
-      const cat = tx.categoryId ? categoryMap.get(tx.categoryId) : undefined;
-      return tx.note || cat?.name || 'Expense';
-    }
-    case 'transfer': {
-      const from = tx.fromAccountId ? accountMap.get(tx.fromAccountId) : '';
-      const to = tx.toAccountId ? accountMap.get(tx.toAccountId) : '';
-      return `${from || '?'} → ${to || '?'}`;
-    }
-    case 'debt':
-      return tx.note || (tx.debtType === 'taken' ? 'Borrowed' : 'Lent');
-  }
-}
 
 const AccountsStrip = memo(function AccountsStrip({
   accounts,
@@ -269,12 +196,12 @@ const RecentTransactionsCard = memo(function RecentTransactionsCard({
           const cat = tx.categoryId ? categoryMap.get(tx.categoryId) : undefined;
           return (
             <div key={tx.id} className="flex items-center gap-3">
-              {txIcon(tx, cat?.icon, cat?.color)}
+              <TxIcon tx={tx} categoryIcon={cat?.icon} categoryColor={cat?.color} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-white truncate">{txLabel(tx, accountMap, categoryMap)}</p>
+                <p className="text-sm text-white truncate">{getTxLabel(tx, accountMap, categoryMap)}</p>
                 <p className="text-xs text-[#6B6B6B]">{tx.date}</p>
               </div>
-              {txAmount(tx, currency)}
+              <TxAmount tx={tx} currency={currency} />
             </div>
           );
         })}
@@ -300,19 +227,15 @@ export function Home() {
     [accounts]
   );
 
-  const monthExpenses = useMemo(() => {
-    return expenses.filter((e) => {
-      const d = new Date(e.date + 'T00:00:00');
-      return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
-    });
-  }, [expenses, currentMonth, currentYear]);
+  const monthExpenses = useMemo(
+    () => filterByMonth(expenses, currentMonth, currentYear),
+    [expenses, currentMonth, currentYear]
+  );
 
-  const monthTransactions = useMemo(() => {
-    return transactions.filter((t) => {
-      const d = new Date(t.date + 'T00:00:00');
-      return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
-    });
-  }, [transactions, currentMonth, currentYear]);
+  const monthTransactions = useMemo(
+    () => filterByMonth(transactions, currentMonth, currentYear),
+    [transactions, currentMonth, currentYear]
+  );
 
   const monthIncome = useMemo(
     () => monthTransactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0),

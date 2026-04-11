@@ -1,13 +1,12 @@
 import { useState, useCallback } from 'react';
-import { X, ChevronDown, Delete, Check, ArrowDown } from 'lucide-react';
+import { X, ChevronDown, Check, ArrowDown } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
 import { AccountSheet } from './AccountSheet';
 import { TapButton } from './TapButton';
+import { Numpad, useNumpadInput } from './Numpad';
 import { useApp } from '../context/AppContext';
 import { formatAmountRaw, getCurrencySymbol, formatCurrency, getTodayString } from '../utils/formatters';
-
-const NUMPAD_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'backspace'];
-const TYPE_ICONS: Record<string, string> = { cash: '💵', bank: '🏦', savings: '💰' };
+import { ACCOUNT_TYPE_ICONS } from '../utils/constants';
 
 function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
   const { accounts, settings, updateAccount, addTransaction } = useApp();
@@ -31,20 +30,7 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
   const parsed = parseFloat(amount);
   const isValid = parsed > 0 && !!fromId && !!toId && fromId !== toId;
 
-  const handleNumKey = useCallback((key: string) => {
-    setAmount((prev) => {
-      if (key === 'backspace') return prev.slice(0, -1);
-      if (key === '.') {
-        if (prev.includes('.')) return prev;
-        return prev === '' ? '0.' : prev + '.';
-      }
-      const next = prev + key;
-      const parts = next.split('.');
-      if (parts[1] && parts[1].length > 2) return prev;
-      if (next.replace('.', '').length > 9) return prev;
-      return next;
-    });
-  }, []);
+  const handleNumKey = useNumpadInput(setAmount);
 
   const handleSave = useCallback(async () => {
     const p = parseFloat(amount);
@@ -110,25 +96,14 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-1.5">
-          {NUMPAD_KEYS.map((key) => (
-            <TapButton
-              key={key}
-              onTap={() => handleNumKey(key)}
-              tapOptions={{ preventDefault: true }}
-              className="h-12 bg-[#111111] active:bg-[#1E1E1E] rounded-xl flex items-center justify-center border border-white/5"
-            >
-              {key === 'backspace' ? <Delete size={16} className="text-[#A0A0A0]" /> : <span className="text-base font-medium text-white">{key}</span>}
-            </TapButton>
-          ))}
-        </div>
+        <Numpad onKey={handleNumKey} />
 
         <div className="space-y-1">
           <TapButton
             onTap={() => setShowFromSheet(true)}
             className="w-full bg-[#111111] border border-white/5 rounded-xl p-3.5 flex items-center gap-3 active:bg-[#1A1A1A]"
           >
-            <span className="text-lg">{TYPE_ICONS[fromAccount?.type ?? 'cash'] ?? '💳'}</span>
+            <span className="text-lg">{ACCOUNT_TYPE_ICONS[fromAccount?.type ?? 'cash'] ?? '💳'}</span>
             <div className="flex-1 text-left">
               <p className="text-xs text-[#6B6B6B]">From</p>
               <p className="text-sm font-medium text-white">{fromAccount?.name ?? 'Select account'}</p>
@@ -146,7 +121,7 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
             onTap={() => setShowToSheet(true)}
             className="w-full bg-[#111111] border border-white/5 rounded-xl p-3.5 flex items-center gap-3 active:bg-[#1A1A1A]"
           >
-            <span className="text-lg">{TYPE_ICONS[toAccount?.type ?? 'cash'] ?? '💳'}</span>
+            <span className="text-lg">{ACCOUNT_TYPE_ICONS[toAccount?.type ?? 'cash'] ?? '💳'}</span>
             <div className="flex-1 text-left">
               <p className="text-xs text-[#6B6B6B]">To</p>
               <p className="text-sm font-medium text-white">{toAccount?.name ?? 'Select account'}</p>

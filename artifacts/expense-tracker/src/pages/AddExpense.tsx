@@ -1,17 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronLeft, ChevronDown, Clock, Delete, X } from 'lucide-react';
+import { Check, ChevronLeft, ChevronDown, Clock, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { Modal, useModalClose } from '../components/Modal';
 import { AccountSheet } from '../components/AccountSheet';
 import { TapButton } from '../components/TapButton';
+import { Numpad, useNumpadInput } from '../components/Numpad';
 import { getTodayString, getCurrencySymbol, formatAmountRaw } from '../utils/formatters';
+import { ACCOUNT_TYPE_ICONS } from '../utils/constants';
 import { Expense } from '../database';
 
 const RECENT_CATS_KEY = 'expense_recent_categories';
 const MAX_RECENT = 3;
-const TYPE_ICONS: Record<string, string> = { cash: '💵', bank: '🏦', savings: '💰' };
 
 function getRecentCategories(): string[] {
   try {
@@ -142,20 +143,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
     .map((id) => categories.find((c) => c.id === id))
     .filter(Boolean) as typeof categories;
 
-  const handleNumKey = useCallback((key: string) => {
-    setAmount((prev) => {
-      if (key === 'backspace') return prev.slice(0, -1);
-      if (key === '.') {
-        if (prev.includes('.')) return prev;
-        return prev === '' ? '0.' : prev + '.';
-      }
-      const next = prev + key;
-      const parts = next.split('.');
-      if (parts[1] && parts[1].length > 2) return prev;
-      if (next.replace('.', '').length > 9) return prev;
-      return next;
-    });
-  }, []);
+  const handleNumKey = useNumpadInput(setAmount);
 
   const handleSelectCategory = useCallback((id: string) => {
     setCategoryId(id);
@@ -275,23 +263,16 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
         </div>
       </div>
 
-      {/* Custom Numpad */}
-      <div className="grid grid-cols-3 gap-2">
-        {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'backspace'].map((key) => (
-          <TapButton
-            key={key}
-            onTap={() => handleNumKey(key)}
-            tapOptions={{ preventDefault: true }}
-            className="h-14 bg-[#1A1A1A] active:bg-[#252525] rounded-2xl flex items-center justify-center border border-white/5"
-          >
-            {key === 'backspace' ? (
-              <Delete size={18} className="text-[#A0A0A0]" />
-            ) : (
-              <span className="text-lg font-medium text-white">{key}</span>
-            )}
-          </TapButton>
-        ))}
-      </div>
+      <Numpad
+        onKey={handleNumKey}
+        buttonHeight="h-14"
+        gap="gap-2"
+        bgColor="bg-[#1A1A1A]"
+        activeBgColor="active:bg-[#252525]"
+        rounded="rounded-2xl"
+        iconSize={18}
+        textSize="text-lg"
+      />
 
       {/* Recently Used Quick Picks */}
       {recentCategories.length > 0 && !editingExpense && (
@@ -359,7 +340,7 @@ export function AddExpense({ expense: editingExpense, onDone }: EditExpenseProps
           onTap={() => setShowAccountSheet(true)}
           className="w-full bg-[#1A1A1A] border border-white/5 rounded-2xl p-4 flex items-center gap-3 active:bg-[#222222] transition-colors"
         >
-          <span className="text-xl">{TYPE_ICONS[selectedAccount?.type ?? 'cash'] ?? '💳'}</span>
+          <span className="text-xl">{ACCOUNT_TYPE_ICONS[selectedAccount?.type ?? 'cash'] ?? '💳'}</span>
           <div className="flex-1 text-left">
             <p className="text-xs text-[#6B6B6B]">Account</p>
             <p className="text-sm font-medium text-white">{selectedAccount?.name ?? 'Select account'}</p>

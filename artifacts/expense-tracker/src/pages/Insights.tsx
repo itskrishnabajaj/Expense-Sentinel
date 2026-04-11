@@ -15,10 +15,10 @@ import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { InsightsPageSkeleton } from '../components/Skeleton';
 import { formatCurrency, getMonthName } from '../utils/formatters';
+import { ACCOUNT_TYPE_ICONS } from '../utils/constants';
+import { filterByMonth, filterByThisWeek, filterByLastWeek } from '../utils/dateFilters';
 
 type View = 'month' | 'week' | 'compare';
-
-const ACCOUNT_TYPE_ICONS: Record<string, string> = { cash: '💵', bank: '🏦', savings: '💰' };
 
 export function Insights() {
   const { expenses, transactions, categories, accounts, settings, loading } = useApp();
@@ -32,61 +32,26 @@ export function Insights() {
 
   const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
-  const thisMonthExpenses = useMemo(() =>
-    expenses.filter((e) => {
-      const d = new Date(e.date + 'T00:00:00');
-      return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
-    }),
+  const thisMonthExpenses = useMemo(
+    () => filterByMonth(expenses, currentMonth, currentYear),
     [expenses, currentMonth, currentYear]
   );
 
-  const lastMonthExpenses = useMemo(() =>
-    expenses.filter((e) => {
-      const d = new Date(e.date + 'T00:00:00');
-      return d.getFullYear() === prevMonthYear && d.getMonth() === prevMonth;
-    }),
+  const lastMonthExpenses = useMemo(
+    () => filterByMonth(expenses, prevMonth, prevMonthYear),
     [expenses, prevMonth, prevMonthYear]
   );
 
-  const thisWeekExpenses = useMemo(() => {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - dayOfWeek);
-    startOfWeek.setHours(0, 0, 0, 0);
-    return expenses.filter((e) => new Date(e.date + 'T00:00:00') >= startOfWeek);
-  }, [expenses]);
+  const thisWeekExpenses = useMemo(() => filterByThisWeek(expenses), [expenses]);
 
-  const lastWeekExpenses = useMemo(() => {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    const startOfThisWeek = new Date(today);
-    startOfThisWeek.setDate(today.getDate() - dayOfWeek);
-    startOfThisWeek.setHours(0, 0, 0, 0);
-    const startOfLastWeek = new Date(startOfThisWeek);
-    startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
-    return expenses.filter((e) => {
-      const d = new Date(e.date + 'T00:00:00');
-      return d >= startOfLastWeek && d < startOfThisWeek;
-    });
-  }, [expenses]);
+  const lastWeekExpenses = useMemo(() => filterByLastWeek(expenses), [expenses]);
 
-  const thisMonthTransactions = useMemo(() =>
-    transactions.filter((t) => {
-      const d = new Date(t.date + 'T00:00:00');
-      return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
-    }),
+  const thisMonthTransactions = useMemo(
+    () => filterByMonth(transactions, currentMonth, currentYear),
     [transactions, currentMonth, currentYear]
   );
 
-  const thisWeekTransactions = useMemo(() => {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - dayOfWeek);
-    startOfWeek.setHours(0, 0, 0, 0);
-    return transactions.filter((t) => new Date(t.date + 'T00:00:00') >= startOfWeek);
-  }, [transactions]);
+  const thisWeekTransactions = useMemo(() => filterByThisWeek(transactions), [transactions]);
 
   const filteredExpenses = view === 'week' ? thisWeekExpenses : thisMonthExpenses;
   const filteredTransactions = view === 'week' ? thisWeekTransactions : thisMonthTransactions;

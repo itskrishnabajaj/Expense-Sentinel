@@ -17,11 +17,6 @@ export async function getTransactions(): Promise<Transaction[]> {
   return all.sort((a, b) => b.createdAt - a.createdAt);
 }
 
-export async function getTransactionById(id: string): Promise<Transaction | undefined> {
-  const db = await getDB();
-  return db.get('transactions', id);
-}
-
 export async function updateTransaction(
   id: string,
   data: Partial<Omit<Transaction, 'id' | 'createdAt'>>
@@ -47,21 +42,6 @@ export async function getTransactionsByAccount(accountId: string): Promise<Trans
       t.fromAccountId === accountId ||
       t.toAccountId === accountId
   );
-}
-
-export async function getTransactionsByType(type: Transaction['type']): Promise<Transaction[]> {
-  const db = await getDB();
-  const store = db.transaction('transactions', 'readonly').store;
-  const index = store.index('by-type');
-  const all = await index.getAll(type);
-  return all.sort((a, b) => b.createdAt - a.createdAt);
-}
-
-export async function updateDebt(
-  id: string,
-  data: Partial<Pick<Transaction, 'remainingAmount' | 'status' | 'history' | 'amount' | 'accountId' | 'note' | 'date' | 'debtType' | 'isOld'>>
-): Promise<Transaction | null> {
-  return updateTransaction(id, data);
 }
 
 export async function addDebtPayment(

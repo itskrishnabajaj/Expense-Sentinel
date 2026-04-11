@@ -25,14 +25,6 @@ export function formatDate(dateStr: string): string {
   });
 }
 
-export function formatDateShort(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('en-IN', {
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
 export function getTodayString(): string {
   const now = new Date();
   const year = now.getFullYear();
@@ -43,25 +35,6 @@ export function getTodayString(): string {
 
 export function getMonthName(month: number): string {
   return new Date(2024, month, 1).toLocaleString('en-IN', { month: 'long' });
-}
-
-export function getDayOfWeek(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('en-IN', { weekday: 'short' });
-}
-
-export function isToday(dateStr: string): boolean {
-  return dateStr === getTodayString();
-}
-
-export function isThisWeek(dateStr: string): boolean {
-  const today = new Date();
-  const date = new Date(dateStr + 'T00:00:00');
-  const dayOfWeek = today.getDay();
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - dayOfWeek);
-  startOfWeek.setHours(0, 0, 0, 0);
-  return date >= startOfWeek && date <= today;
 }
 
 export function getCurrencySymbol(_currency = 'INR'): string {
