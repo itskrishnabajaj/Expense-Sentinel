@@ -1,0 +1,345 @@
+You are performing a DEEP INTERACTION SYSTEM DEBUG + MODAL ARCHITECTURE REBUILD + UI STABILITY PASS on a mobile-first React + Vite PWA (MyLedger).
+
+This is a precision engineering task, not a cosmetic fix.
+
+---
+
+🚨 CORE EXECUTION RULES
+
+You MUST:
+
+1. Read ALL related code before making changes:
+   
+   - Debt card components
+   - Button components
+   - Modal components
+   - Global layout wrappers
+   - Touch handling logic
+
+2. Identify ROOT CAUSES (not symptoms)
+
+3. Fix issues WITHOUT breaking:
+   
+   - Existing UX
+   - Scroll system
+   - Financial logic
+
+4. Validate behavior through actual interaction flow
+
+---
+
+🎯 PRIMARY OBJECTIVES
+
+You must FIX:
+
+1. Unresponsive edit/delete buttons (settled debt)
+2. Incorrect modal positioning (not centered to viewport)
+3. Broken overlay/backdrop (weird outline issue)
+4. Touch + scroll + tap conflict system
+
+---
+
+⚠️ PART 1: INTERACTION SYSTEM FAILURE (CRITICAL)
+
+---
+
+🚨 PROBLEM
+
+Buttons (edit/delete) are not responding properly
+
+---
+
+🔍 ROOT CAUSE ANALYSIS (MANDATORY)
+
+You MUST check:
+
+---
+
+1. EVENT PROPAGATION
+
+- Is parent element capturing touch?
+- Is "event.stopPropagation()" misused?
+- Is "preventDefault()" blocking clicks?
+
+---
+
+2. TOUCH HANDLING SYSTEM
+
+You previously implemented tap vs scroll logic.
+
+CHECK:
+
+- Is touchmove cancelling click events?
+- Are you blocking click if slight movement detected?
+- Are thresholds too strict?
+
+👉 HIGH PROBABILITY ROOT CAUSE
+
+---
+
+3. POINTER EVENTS
+
+Check:
+
+pointer-events: none;
+
+- Any parent blocking interaction?
+- Overlay layer covering buttons?
+
+---
+
+4. Z-INDEX STACKING
+
+- Buttons must be above card layers
+- No invisible overlay above buttons
+
+---
+
+🛠️ FIX
+
+- Ensure buttons:
+  
+  - Have active click handlers
+  - Are not blocked by any parent
+  - Are accessible via touch
+
+- Refine touch detection:
+  
+  - Allow small movement threshold
+  - Do NOT cancel valid taps
+
+---
+
+🧪 VALIDATION
+
+✔ Single tap triggers instantly
+✔ No dead zones
+✔ Works consistently across cards
+
+---
+
+⚠️ PART 2: MODAL ARCHITECTURE (CRITICAL FIX)
+
+---
+
+🚨 PROBLEM
+
+- Modal is not centered in viewport
+- It behaves relative to scroll container
+
+---
+
+🔍 ROOT CAUSE
+
+- Modal rendered inside scrollable container
+- Using "absolute" positioning
+
+---
+
+🛠️ FIX (MANDATORY)
+
+---
+
+1. USE PORTAL
+
+Render modal at root level:
+
+ReactDOM.createPortal(modal, document.body)
+
+---
+
+2. USE FIXED POSITIONING
+
+position: fixed;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+
+---
+
+3. ENSURE FULL VIEWPORT COVERAGE
+
+Overlay:
+
+position: fixed;
+inset: 0;
+
+---
+
+🧪 VALIDATION
+
+✔ Modal always centered on visible screen
+✔ Independent of scroll position
+
+---
+
+⚠️ PART 3: BACKDROP / OUTLINE BUG
+
+---
+
+🚨 PROBLEM
+
+- Weird outline or border visible when modal opens
+- Feels broken and non-premium
+
+---
+
+🔍 INVESTIGATE
+
+- Multiple overlays stacked?
+- Borders on wrapper?
+- Incorrect backdrop styling?
+
+---
+
+🛠️ FIX
+
+---
+
+BACKDROP STYLE:
+
+background: rgba(0, 0, 0, 0.5);
+backdrop-filter: blur(10px);
+
+---
+
+REMOVE:
+
+- Any border on overlay
+- Any duplicate wrapper layers
+- Any outline effects
+
+---
+
+🧪 VALIDATION
+
+✔ Clean blur background
+✔ No outlines
+✔ No flicker
+
+---
+
+⚠️ PART 4: SCROLL LOCK SYSTEM
+
+---
+
+IMPLEMENT:
+
+When modal opens:
+
+document.body.style.overflow = "hidden";
+
+On close:
+
+document.body.style.overflow = "";
+
+---
+
+ENSURE:
+
+- Background does NOT scroll
+- Modal scroll (if any) is isolated
+
+---
+
+⚠️ PART 5: TOUCH VS SCROLL RECONCILIATION
+
+---
+
+PROBLEM:
+
+Scroll gestures interfering with taps
+
+---
+
+FIX:
+
+- Introduce movement threshold:
+  - If movement < threshold → treat as tap
+  - Else → treat as scroll
+
+---
+
+DO NOT:
+
+- Cancel click events aggressively
+- Block interaction unnecessarily
+
+---
+
+VALIDATION:
+
+✔ Scroll does not trigger taps
+✔ Tap works even with slight movement
+
+---
+
+⚡ PART 6: UI LAYER CLEANUP
+
+---
+
+ENSURE:
+
+- No invisible layers blocking interaction
+- Clean stacking context
+- Proper z-index hierarchy
+
+---
+
+🧪 FINAL VALIDATION (STRICT)
+
+---
+
+INTERACTION:
+
+✔ All buttons clickable
+✔ No dead taps
+
+---
+
+MODAL:
+
+✔ Centered perfectly
+✔ Clean overlay
+✔ No outline bug
+
+---
+
+TOUCH:
+
+✔ Scroll smooth
+✔ Tap reliable
+
+---
+
+UX:
+
+✔ Premium feel
+✔ No glitch
+✔ No broken behavior
+
+---
+
+🚫 FORBIDDEN
+
+DO NOT:
+
+- Apply random fixes
+- Ignore root cause
+- Break touch system
+- Break modal animation
+
+---
+
+🚀 FINAL OUTPUT
+
+Return:
+
+- Fixed interaction system
+- Correct modal architecture
+- Clean overlay implementation
+- Stable touch handling
+
+Act like a senior frontend engineer debugging complex mobile interaction systems with precision.
+
+Do NOT assume correctness—verify through real interaction behavior.
