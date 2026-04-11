@@ -108,7 +108,7 @@ const TxRow = memo(function TxRow({
           </button>
         )}
         <button
-          onClick={() => onDelete(tx)}
+          onClick={(e) => { e.stopPropagation(); onDelete(tx); }}
           disabled={deletingId === tx.id}
           className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg flex-shrink-0 disabled:opacity-40"
           aria-label="Delete"
@@ -400,7 +400,7 @@ export function History() {
   const deleteNonceRef = useRef(0);
 
   const handleDeleteTransaction = useCallback((tx: Transaction) => {
-    setConfirmDelete((prev) => prev ? prev : { type: tx.type, id: tx.id, nonce: ++deleteNonceRef.current });
+    setConfirmDelete({ type: tx.type, id: tx.id, nonce: ++deleteNonceRef.current });
   }, []);
 
   const confirmDeleteTx = useMemo(
@@ -409,13 +409,6 @@ export function History() {
   );
 
   const deletingRef = useRef(false);
-
-  useEffect(() => {
-    if (confirmDelete && !confirmDeleteTx && !deletingRef.current) {
-      const t = setTimeout(() => setConfirmDelete(null), 150);
-      return () => clearTimeout(t);
-    }
-  }, [confirmDelete, confirmDeleteTx]);
 
   const executeDeleteById = useCallback(async (txId: string) => {
     if (deletingRef.current) return;
