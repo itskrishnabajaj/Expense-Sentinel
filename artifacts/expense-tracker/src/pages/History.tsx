@@ -12,7 +12,7 @@ import { DebtDetailSheet } from '../components/DebtDetailSheet';
 import { TxIcon, getTxAmountInfo, getTxTitle } from '../components/TransactionDisplay';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { ACCOUNT_TYPE_ICONS } from '../utils/constants';
-import { Expense, Transaction, Category, getDB } from '../database';
+import { Expense, Transaction, Category, getDB, atomicBatch, AtomicOp } from '../database';
 
 function groupByDate(items: Transaction[]): [string, Transaction[]][] {
   const groups: Record<string, Transaction[]> = {};
@@ -312,9 +312,6 @@ export function History() {
     categories,
     accounts,
     settings,
-    deleteExpense,
-    deleteTransaction,
-    updateAccount,
     loading,
     refresh,
   } = useApp();
@@ -425,16 +422,17 @@ export function History() {
 
     try {
       let deletedExpense: Expense | undefined;
+      const ops: AtomicOp[] = [];
 
       if (tx.type === 'expense') {
         const expId = tx.expenseId ?? tx.id;
         deletedExpense = expenses.find((e) => e.id === expId);
-        await deleteExpense(expId);
-        try { await deleteTransaction(tx.id); } catch { /* legacy */ }
+        ops.push({ store: 'expenses', type: 'delete', key: expId });
+        ops.push({ store: 'transactions', type: 'delete', key: tx.id });
         if (tx.accountId) {
           const acc = accounts.find((a) => a.id === tx.accountId);
           if (acc) {
-            await updateAccount(tx.accountId, { balance: acc.balance + tx.amount });
+            ops.push({ store: 'accounts', type: 'put', value: { ...acc, balance: acc.balance + tx.amount } });
             balanceChanges.push({ accId: tx.accountId, delta: tx.amount });
           }
         }
@@ -458,33 +456,36 @@ export function History() {
           if (delta !== 0) {
             const acc = accounts.find((a) => a.id === accId);
             if (acc) {
-              await updateAccount(accId, { balance: acc.balance + delta });
+              ops.push({ store: 'accounts', type: 'put', value: { ...acc, balance: acc.balance + delta } });
               balanceChanges.push({ accId, delta });
             }
           }
         }
-        await deleteTransaction(tx.id);
+        ops.push({ store: 'transactions', type: 'delete', key: tx.id });
       } else {
-        await deleteTransaction(tx.id);
+        ops.push({ store: 'transactions', type: 'delete', key: tx.id });
         if (tx.type === 'income' && tx.accountId) {
           const acc = accounts.find((a) => a.id === tx.accountId);
           if (acc) {
-            await updateAccount(tx.accountId, { balance: acc.balance - tx.amount });
+            ops.push({ store: 'accounts', type: 'put', value: { ...acc, balance: acc.balance - tx.amount } });
             balanceChanges.push({ accId: tx.accountId, delta: -tx.amount });
           }
         } else if (tx.type === 'transfer') {
           const from = tx.fromAccountId ? accounts.find((a) => a.id === tx.fromAccountId) : undefined;
           const to = tx.toAccountId ? accounts.find((a) => a.id === tx.toAccountId) : undefined;
           if (from && tx.fromAccountId) {
-            await updateAccount(tx.fromAccountId, { balance: from.balance + tx.amount });
+            ops.push({ store: 'accounts', type: 'put', value: { ...from, balance: from.balance + tx.amount } });
             balanceChanges.push({ accId: tx.fromAccountId, delta: tx.amount });
           }
           if (to && tx.toAccountId) {
-            await updateAccount(tx.toAccountId, { balance: to.balance - tx.amount });
+            ops.push({ store: 'accounts', type: 'put', value: { ...to, balance: to.balance - tx.amount } });
             balanceChanges.push({ accId: tx.toAccountId, delta: -tx.amount });
           }
         }
       }
+
+      await atomicBatch(ops);
+      await refresh();
 
       const typeLabel = tx.type === 'debt'
         ? (tx.debtType === 'taken' ? 'borrowed' : 'lent')
@@ -497,15 +498,19 @@ export function History() {
 
       pushUndo(label, async () => {
         try {
-          const db = await getDB();
-          await db.put('transactions', capturedTx);
+          const undoOps: AtomicOp[] = [];
+          undoOps.push({ store: 'transactions', type: 'put', value: capturedTx });
           if (capturedExpense) {
-            await db.put('expenses', capturedExpense);
+            undoOps.push({ store: 'expenses', type: 'put', value: capturedExpense });
           }
+          const db = await getDB();
           for (const { accId, delta } of capturedBalanceChanges) {
             const acc = await db.get('accounts', accId);
-            if (acc) await db.put('accounts', { ...acc, balance: acc.balance - delta });
+            if (acc) {
+              undoOps.push({ store: 'accounts', type: 'put', value: { ...acc, balance: acc.balance - delta } });
+            }
           }
+          await atomicBatch(undoOps);
         } finally {
           await refresh();
         }
@@ -514,7 +519,7 @@ export function History() {
       setDeletingId(null);
       deletingRef.current = false;
     }
-  }, [allItems, deleteExpense, deleteTransaction, updateAccount, accounts, expenses, settings.currency, pushUndo, refresh]);
+  }, [allItems, accounts, expenses, settings.currency, pushUndo, refresh]);
 
   const handleEditTx = useCallback((tx: Transaction) => {
     if (tx.type === 'income') setEditingIncome(tx);

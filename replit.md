@@ -76,6 +76,9 @@ A premium personal expense tracking Progressive Web App (PWA).
 - `AppContext.loadAll` uses a `loadIdRef` stale-request guard so concurrent refreshes don't overwrite each other
 - `History.executeDeleteById` uses a `deletingRef` synchronous lock to prevent concurrent deletes
 - `UndoContext.handleUndo` uses a `undoingRef` synchronous lock (plus state-based disabled UI) to prevent double-undo on rapid taps
+- Delete + undo paths use `atomicBatch()` for all coupled IDB writes (transaction delete + expense delete + account balance updates) — prevents partial state on failure
+- `atomicBatch` in `db.ts` wraps multiple store operations in a single IndexedDB transaction with automatic rollback
+- Modal component has `closingRef` synchronous lock to prevent double-close, Escape key to dismiss, and pointer-event isolation on card
 - Undo callbacks wrap DB restoration in try/finally to always call `refresh()` even on failure
 - Main content area uses `calc(96px + env(safe-area-inset-bottom))` for bottom padding to handle notched devices
 

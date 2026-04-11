@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTap } from '../hooks/useTap';
 
@@ -14,23 +14,31 @@ interface ModalProps {
 export function Modal({ onClose, children, maxWidth = 'max-w-sm' }: ModalProps) {
   const [closing, setClosing] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closingRef = useRef(false);
+
+  const requestClose = useCallback(() => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    setClosing(true);
+    timerRef.current = setTimeout(onClose, 180);
+  }, [onClose]);
 
   useEffect(() => {
     const main = document.querySelector('main') as HTMLElement | null;
     const prevOverflow = main?.style.overflow ?? '';
     if (main) main.style.overflow = 'hidden';
 
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') requestClose();
+    };
+    document.addEventListener('keydown', handleEsc);
+
     return () => {
       if (main) main.style.overflow = prevOverflow;
       if (timerRef.current) clearTimeout(timerRef.current);
+      document.removeEventListener('keydown', handleEsc);
     };
-  }, []);
-
-  const requestClose = () => {
-    if (closing) return;
-    setClosing(true);
-    timerRef.current = setTimeout(onClose, 180);
-  };
+  }, [requestClose]);
 
   const backdropTap = useTap(requestClose);
 

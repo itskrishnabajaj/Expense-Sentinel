@@ -243,3 +243,27 @@ export function resetDB(): void {
 export function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
+
+export interface AtomicOp {
+  store: 'expenses' | 'transactions' | 'accounts';
+  type: 'put' | 'delete';
+  key?: string;
+  value?: Expense | Transaction | Account;
+}
+
+export async function atomicBatch(ops: AtomicOp[]): Promise<void> {
+  const db = await getDB();
+  const storeNames = [...new Set(ops.map((o) => o.store))] as ('expenses' | 'transactions' | 'accounts')[];
+  const idbTx = db.transaction(storeNames, 'readwrite');
+
+  for (const op of ops) {
+    const store = idbTx.objectStore(op.store);
+    if (op.type === 'delete' && op.key) {
+      await store.delete(op.key);
+    } else if (op.type === 'put' && op.value) {
+      await store.put(op.value);
+    }
+  }
+
+  await idbTx.done;
+}
