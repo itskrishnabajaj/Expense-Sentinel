@@ -58,16 +58,14 @@ function DebtDetailInner({
     });
   }, []);
 
-  const applyPayment = useCallback(async (paidAmount: number, note: string, accountId: string) => {
+  const applyPayment = useCallback(async (paidAmount: number, note: string, payAccId: string) => {
     const newRemaining = Math.max(0, parseFloat((remaining - paidAmount).toFixed(2)));
     const newStatus: 'active' | 'settled' = newRemaining === 0 ? 'settled' : 'active';
 
-    if (!tx.isOld) {
-      const acc = accounts.find((a) => a.id === accountId);
-      if (acc) {
-        const balanceDelta = tx.debtType === 'taken' ? -paidAmount : paidAmount;
-        await updateAccount(acc.id, { balance: acc.balance + balanceDelta });
-      }
+    const acc = accounts.find((a) => a.id === payAccId);
+    if (acc) {
+      const balanceDelta = tx.debtType === 'taken' ? -paidAmount : paidAmount;
+      await updateAccount(acc.id, { balance: acc.balance + balanceDelta });
     }
 
     const payment = {
@@ -75,6 +73,7 @@ function DebtDetailInner({
       amount: paidAmount,
       date: getTodayString(),
       note: note || undefined,
+      accountId: payAccId,
       createdAt: Date.now(),
     };
 

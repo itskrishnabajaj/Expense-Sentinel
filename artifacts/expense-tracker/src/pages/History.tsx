@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, memo, useEffect, useRef } from 'react';
-import { Trash2, Pencil, X, Filter, Search, TrendingUp, ArrowLeftRight, AlertCircle, ShoppingBag } from 'lucide-react';
+import { Trash2, Pencil, X, Filter, Search, TrendingUp, ArrowLeftRight, AlertCircle, AlertTriangle, ShoppingBag } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { GenericPageSkeleton } from '../components/Skeleton';
@@ -373,6 +373,7 @@ export function History() {
   const [editingDebt, setEditingDebt] = useState<Transaction | null>(null);
   const [viewingDebt, setViewingDebt] = useState<Transaction | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteDebt, setConfirmDeleteDebt] = useState<Transaction | null>(null);
   const [showFilter, setShowFilter] = useState(false);
   const [settledOpen, setSettledOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -446,6 +447,10 @@ export function History() {
   const showTransferSection = filterType === 'all' || filterType === 'transfer';
 
   const handleDeleteTransaction = useCallback(async (tx: Transaction) => {
+    if (tx.type === 'debt') {
+      setConfirmDeleteDebt(tx);
+      return;
+    }
     setDeletingId(tx.id);
     try {
       if (tx.type === 'expense') {
@@ -466,19 +471,48 @@ export function History() {
           const to = tx.toAccountId ? accounts.find((a) => a.id === tx.toAccountId) : undefined;
           if (from && tx.fromAccountId) await updateAccount(tx.fromAccountId, { balance: from.balance + tx.amount });
           if (to && tx.toAccountId) await updateAccount(tx.toAccountId, { balance: to.balance - tx.amount });
-        } else if (tx.type === 'debt' && !tx.isOld && tx.accountId) {
-          const acc = accounts.find((a) => a.id === tx.accountId);
-          if (acc) {
-            const remaining = tx.remainingAmount ?? tx.amount;
-            const delta = tx.debtType === 'taken' ? -remaining : remaining;
-            await updateAccount(tx.accountId, { balance: acc.balance + delta });
-          }
         }
       }
     } finally {
       setDeletingId(null);
     }
   }, [deleteExpense, deleteTransaction, updateAccount, accounts]);
+
+  const executeDebtDelete = useCallback(async (tx: Transaction) => {
+    setConfirmDeleteDebt(null);
+    setDeletingId(tx.id);
+    try {
+      const adjustments = new Map<string, number>();
+      const adjust = (id: string | undefined, delta: number) => {
+        if (!id) return;
+        adjustments.set(id, (adjustments.get(id) ?? 0) + delta);
+      };
+
+      if (!tx.isOld && tx.accountId) {
+        const creationDelta = tx.debtType === 'taken' ? -tx.amount : tx.amount;
+        adjust(tx.accountId, creationDelta);
+      }
+
+      if (tx.history && tx.history.length > 0) {
+        for (const payment of tx.history) {
+          const payAccId = payment.accountId ?? tx.accountId;
+          const paymentReverseDelta = tx.debtType === 'taken' ? payment.amount : -payment.amount;
+          adjust(payAccId, paymentReverseDelta);
+        }
+      }
+
+      for (const [accId, delta] of adjustments) {
+        if (delta !== 0) {
+          const acc = accounts.find((a) => a.id === accId);
+          if (acc) await updateAccount(accId, { balance: acc.balance + delta });
+        }
+      }
+
+      await deleteTransaction(tx.id);
+    } finally {
+      setDeletingId(null);
+    }
+  }, [deleteTransaction, updateAccount, accounts]);
 
   const handleEditTx = useCallback((tx: Transaction) => {
     if (tx.type === 'income') setEditingIncome(tx);
@@ -720,6 +754,51 @@ export function History() {
             </>
           )}
 
+        </div>
+      )}
+
+      {confirmDeleteDebt && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-6" style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="bg-[#1A1A1A] rounded-2xl border border-white/10 w-full max-w-sm overflow-hidden shadow-2xl">
+            <div className="p-5 space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(239,68,68,0.12)' }}>
+                  <AlertTriangle size={18} className="text-red-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white">Delete Debt?</p>
+                  <p className="text-xs text-[#6B6B6B]">
+                    {formatCurrency(confirmDeleteDebt.amount, settings.currency)}
+                    {' '}{confirmDeleteDebt.debtType === 'taken' ? 'borrowed' : 'lent'}
+                    {confirmDeleteDebt.note ? ` — ${confirmDeleteDebt.note}` : ''}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-[#A0A0A0] leading-relaxed">
+                This will reverse all balance effects
+                {(confirmDeleteDebt.history ?? []).length > 0
+                  ? ` including ${confirmDeleteDebt.history!.length} payment${confirmDeleteDebt.history!.length > 1 ? 's' : ''}`
+                  : ''}
+                . This cannot be undone.
+              </p>
+            </div>
+            <div className="flex border-t border-white/5">
+              <button
+                onClick={() => setConfirmDeleteDebt(null)}
+                className="flex-1 py-3.5 text-sm font-medium text-[#A0A0A0] active:bg-white/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <div className="w-px bg-white/5" />
+              <button
+                onClick={() => executeDebtDelete(confirmDeleteDebt)}
+                disabled={deletingId === confirmDeleteDebt.id}
+                className="flex-1 py-3.5 text-sm font-semibold text-red-400 active:bg-red-500/10 transition-colors disabled:opacity-40"
+              >
+                {deletingId === confirmDeleteDebt.id ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

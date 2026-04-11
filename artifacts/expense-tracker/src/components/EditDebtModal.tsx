@@ -78,15 +78,33 @@ function EditDebtInner({
           adjustments.set(id, (adjustments.get(id) ?? 0) + delta);
         };
 
-        if (!tx.isOld) {
-          const netRemaining = tx.remainingAmount ?? tx.amount;
-          const reverseDelta = tx.debtType === 'taken' ? -netRemaining : netRemaining;
-          adjust(tx.accountId, reverseDelta);
-        }
+        if (financialAmountsChanged) {
+          if (!tx.isOld && tx.accountId) {
+            const creationReverse = tx.debtType === 'taken' ? -tx.amount : tx.amount;
+            adjust(tx.accountId, creationReverse);
+          }
 
-        if (!isOld) {
-          const applyDelta = debtType === 'taken' ? newAmount : -newAmount;
-          adjust(accountId, applyDelta);
+          if (tx.history && tx.history.length > 0) {
+            for (const payment of tx.history) {
+              const payAccId = payment.accountId ?? tx.accountId;
+              const paymentReverse = tx.debtType === 'taken' ? payment.amount : -payment.amount;
+              adjust(payAccId, paymentReverse);
+            }
+          }
+
+          if (!isOld) {
+            const applyDelta = debtType === 'taken' ? newAmount : -newAmount;
+            adjust(accountId, applyDelta);
+          }
+        } else {
+          if (!tx.isOld && tx.accountId) {
+            const creationReverse = tx.debtType === 'taken' ? -tx.amount : tx.amount;
+            adjust(tx.accountId, creationReverse);
+          }
+          if (!isOld) {
+            const applyDelta = tx.debtType === 'taken' ? tx.amount : -tx.amount;
+            adjust(tx.accountId, applyDelta);
+          }
         }
 
         for (const [id, delta] of adjustments) {

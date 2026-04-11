@@ -38,8 +38,10 @@ A premium personal expense tracking Progressive Web App (PWA).
 **Debt Lifecycle:**
 - New debts saved with `remainingAmount = amount`, `status = 'active'`, `history = []`
 - `DebtDetailSheet` modal: shows progress bar (paid/remaining), payment history, Pay Full / Pay Partial buttons
-- Pay Full/Partial: adjusts account balance (via `remainingAmount` net), records payment in `history[]`
-- `EditDebtModal`: reverses old balance effect, applies new, resets history if payments exist
+- Pay Full/Partial: always adjusts account balance (even for old debts), records payment with `accountId` in `history[]`
+- `EditDebtModal`: reverses full original amount + each payment from its stored account, applies new, resets history if payments exist
+- Debt deletion: confirmation dialog shown; reverses creation impact (full amount, not remaining) + each payment from its stored account; old debts skip creation reversal but still reverse payments
+- `DebtPayment` stores `accountId` for correct per-payment balance reversal on delete/edit
 
 **Screens:**
 1. **Home** – Monthly summary, budget progress, top categories, recent expenses
