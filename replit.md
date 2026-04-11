@@ -71,12 +71,20 @@ A premium personal expense tracking Progressive Web App (PWA).
 - `src/components/Numpad.tsx` – `Numpad` component + `useNumpadInput` hook (used by AddExpense, IncomeModal, TransferModal, DebtModal, DebtDetailSheet)
 - `src/components/TransactionDisplay.tsx` – `TxIcon`, `TxAmount`, `getTxLabel`, `getTxAmountInfo` (used by Home, History)
 
+**Stability & Hardening (Task #3):**
+- `src/components/ErrorBoundary.tsx` – React class error boundary wrapping the entire app; shows recovery UI on crash instead of white screen
+- `AppContext.loadAll` uses a `loadIdRef` stale-request guard so concurrent refreshes don't overwrite each other
+- `History.executeDeleteById` uses a `deletingRef` synchronous lock to prevent concurrent deletes
+- `UndoContext.handleUndo` uses a `undoingRef` synchronous lock (plus state-based disabled UI) to prevent double-undo on rapid taps
+- Undo callbacks wrap DB restoration in try/finally to always call `refresh()` even on failure
+- Main content area uses `calc(96px + env(safe-area-inset-bottom))` for bottom padding to handle notched devices
+
 **Key files:**
 - `src/database/` – IndexedDB layer (db.ts v3, accounts.ts, transactions.ts, expenses.ts, categories.ts, settings.ts)
-- `src/context/AppContext.tsx` – Global state provider; calls `migrateIfNeeded` on init
+- `src/context/AppContext.tsx` – Global state provider; calls `migrateIfNeeded` on init; stale-load guard
 - `src/pages/` – 5 screens
-- `src/components/` – BottomNav, FAB, Modal, ConfirmDeleteModal, AccountSheet, AccountFormModal, IncomeModal, TransferModal, DebtModal, EditIncomeModal, EditTransferModal, EditDebtModal, DebtDetailSheet, CategoryIcon, InstallPrompt, Numpad, TransactionDisplay
-- `src/context/UndoContext.tsx` – Undo stack (5 items, 5s TTL) with toast UI; `pushUndo(label, asyncFn)` for ephemeral undo
+- `src/components/` – BottomNav, FAB, Modal, ConfirmDeleteModal, AccountSheet, AccountFormModal, IncomeModal, TransferModal, DebtModal, EditIncomeModal, EditTransferModal, EditDebtModal, DebtDetailSheet, CategoryIcon, InstallPrompt, Numpad, TransactionDisplay, ErrorBoundary
+- `src/context/UndoContext.tsx` – Undo stack (5 items, 5s TTL) with toast UI; `pushUndo(label, asyncFn)` for ephemeral undo; ref-based rapid-tap guard
 - `vite.config.ts` – PWA configuration with Workbox
 
 ## Key Commands

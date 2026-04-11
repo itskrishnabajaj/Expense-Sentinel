@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, ReactNode, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Expense, Category, Account, Transaction, migrateIfNeeded } from '../database';
 import { getExpenses, addExpense, updateExpense, deleteExpense } from '../database/expenses';
 import { getCategories, addCategory, updateCategory, deleteCategory } from '../database/categories';
@@ -52,8 +52,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [dbUnavailable, setDbUnavailable] = useState(false);
+  const loadIdRef = useRef(0);
 
   const loadAll = useCallback(async () => {
+    const thisLoadId = ++loadIdRef.current;
     setLoading(true);
     try {
       await migrateIfNeeded();
@@ -65,6 +67,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getAccounts(),
         getTransactions(),
       ]);
+      if (thisLoadId !== loadIdRef.current) return;
       setExpenses(expData);
       setCategories(catData);
       setSettings(setData);
@@ -72,9 +75,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setTransactions(txData);
       setDbUnavailable(false);
     } catch {
+      if (thisLoadId !== loadIdRef.current) return;
       setDbUnavailable(true);
     } finally {
-      setLoading(false);
+      if (thisLoadId === loadIdRef.current) setLoading(false);
     }
   }, []);
 

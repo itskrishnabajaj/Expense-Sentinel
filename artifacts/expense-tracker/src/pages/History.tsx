@@ -409,11 +409,15 @@ export function History() {
     [confirmDelete, allItems]
   );
 
+  const deletingRef = useRef(false);
+
   const executeDeleteById = useCallback(async (txId: string) => {
+    if (deletingRef.current) return;
+    deletingRef.current = true;
     setConfirmDelete(null);
 
     const tx = allItems.find((t) => t.id === txId);
-    if (!tx) return;
+    if (!tx) { deletingRef.current = false; return; }
 
     setDeletingId(tx.id);
 
@@ -492,19 +496,23 @@ export function History() {
       const capturedBalanceChanges = [...balanceChanges];
 
       pushUndo(label, async () => {
-        const db = await getDB();
-        await db.put('transactions', capturedTx);
-        if (capturedExpense) {
-          await db.put('expenses', capturedExpense);
+        try {
+          const db = await getDB();
+          await db.put('transactions', capturedTx);
+          if (capturedExpense) {
+            await db.put('expenses', capturedExpense);
+          }
+          for (const { accId, delta } of capturedBalanceChanges) {
+            const acc = await db.get('accounts', accId);
+            if (acc) await db.put('accounts', { ...acc, balance: acc.balance - delta });
+          }
+        } finally {
+          await refresh();
         }
-        for (const { accId, delta } of capturedBalanceChanges) {
-          const acc = await db.get('accounts', accId);
-          if (acc) await db.put('accounts', { ...acc, balance: acc.balance - delta });
-        }
-        await refresh();
       });
     } finally {
       setDeletingId(null);
+      deletingRef.current = false;
     }
   }, [allItems, deleteExpense, deleteTransaction, updateAccount, accounts, expenses, settings.currency, pushUndo, refresh]);
 

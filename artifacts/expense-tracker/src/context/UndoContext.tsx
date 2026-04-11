@@ -23,6 +23,7 @@ export function UndoProvider({ children }: { children: ReactNode }) {
   const [stack, setStack] = useState<UndoItem[]>([]);
   const [undoing, setUndoing] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const undoingRef = useRef(false);
 
   const clearExpired = useCallback(() => {
     const now = Date.now();
@@ -49,10 +50,15 @@ export function UndoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleUndo = useCallback(async (item: UndoItem) => {
+    if (undoingRef.current) return;
+    undoingRef.current = true;
     setUndoing(item.id);
     try {
       await item.execute();
+    } catch (err) {
+      console.error('Undo failed:', err);
     } finally {
+      undoingRef.current = false;
       setUndoing(null);
       setStack((prev) => prev.filter((s) => s.id !== item.id));
     }
