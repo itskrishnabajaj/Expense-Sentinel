@@ -412,7 +412,8 @@ export function History() {
 
   useEffect(() => {
     if (confirmDelete && !confirmDeleteTx && !deletingRef.current) {
-      setConfirmDelete(null);
+      const t = setTimeout(() => setConfirmDelete(null), 150);
+      return () => clearTimeout(t);
     }
   }, [confirmDelete, confirmDeleteTx]);
 
@@ -774,7 +775,7 @@ export function History() {
 
       {confirmDeleteTx && confirmDelete && (
         <ConfirmDeleteModal
-          key={confirmDelete.nonce}
+          key={`${confirmDelete.id}-${confirmDelete.nonce}`}
           title={`Delete ${confirmDeleteTx.type === 'debt'
             ? 'Debt'
             : confirmDeleteTx.type === 'expense'
