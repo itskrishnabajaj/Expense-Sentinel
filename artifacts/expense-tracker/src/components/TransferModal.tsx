@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { X, ChevronDown, Check, ArrowDown } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
 import { AccountSheet } from './AccountSheet';
@@ -7,9 +7,10 @@ import { Numpad, useNumpadInput } from './Numpad';
 import { useApp } from '../context/AppContext';
 import { formatAmountRaw, getCurrencySymbol, formatCurrency, getTodayString } from '../utils/formatters';
 import { ACCOUNT_TYPE_ICONS } from '../utils/constants';
+import { atomicBatch, AtomicOp, generateId, Transaction } from '../database';
 
 function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
-  const { accounts, settings, updateAccount, addTransaction } = useApp();
+  const { accounts, settings, refresh } = useApp();
   const close = useModalClose();
   const symbol = getCurrencySymbol(settings.currency);
 
@@ -23,6 +24,8 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
   const [showFromSheet, setShowFromSheet] = useState(false);
   const [showToSheet, setShowToSheet] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const savingRef = useRef(false);
 
   const fromAccount = accounts.find((a) => a.id === fromId) ?? accounts[0];
   const toAccount = accounts.find((a) => a.id === toId);
@@ -33,6 +36,7 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
   const handleNumKey = useNumpadInput(setAmount);
 
   const handleSave = useCallback(async () => {
+    if (savingRef.current) return;
     const p = parseFloat(amount);
     if (!p || p <= 0 || !fromId || !toId || fromId === toId) return;
 
@@ -45,24 +49,35 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
     }
 
     setValidationError('');
+    setSaveError('');
     setSaving(true);
+    savingRef.current = true;
     try {
-      if (fromAcc) await updateAccount(fromId, { balance: fromAcc.balance - p });
-      if (toAcc) await updateAccount(toId, { balance: toAcc.balance + p });
-      await addTransaction({
+      const ops: AtomicOp[] = [];
+      if (fromAcc) ops.push({ store: 'accounts', type: 'put', value: { ...fromAcc, balance: fromAcc.balance - p } });
+      if (toAcc) ops.push({ store: 'accounts', type: 'put', value: { ...toAcc, balance: toAcc.balance + p } });
+      const newTx: Transaction = {
+        id: generateId(),
         type: 'transfer',
         amount: p,
         fromAccountId: fromId,
         toAccountId: toId,
         note: note.trim(),
         date,
-      });
+        createdAt: Date.now(),
+      };
+      ops.push({ store: 'transactions', type: 'put', value: newTx });
+      await atomicBatch(ops);
+      await refresh();
       setSuccess(true);
       setTimeout(() => { onCloseClean(); }, 600);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save. Please try again.');
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
-  }, [amount, fromId, toId, note, date, accounts, updateAccount, addTransaction, onCloseClean, settings.currency]);
+  }, [amount, fromId, toId, note, date, accounts, refresh, onCloseClean, settings.currency]);
 
   if (success) {
     return (
@@ -135,6 +150,9 @@ function TransferInner({ onCloseClean }: { onCloseClean: () => void }) {
         )}
         {validationError && (
           <p className="text-xs text-red-400 text-center">{validationError}</p>
+        )}
+        {saveError && (
+          <p className="text-xs text-red-400 text-center">{saveError}</p>
         )}
 
         <div className="bg-[#111111] border border-white/5 rounded-xl p-3.5">

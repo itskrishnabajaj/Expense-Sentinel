@@ -44,6 +44,11 @@ export async function getTransactionsByAccount(accountId: string): Promise<Trans
   );
 }
 
+export async function getTransactionsByCategory(categoryId: string): Promise<Transaction[]> {
+  const all = await getTransactions();
+  return all.filter((t) => t.categoryId === categoryId);
+}
+
 export async function addDebtPayment(
   debtId: string,
   payment: Omit<DebtPayment, 'id' | 'createdAt'>,

@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { X, ChevronDown, Delete, Check } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
 import { AccountSheet } from './AccountSheet';
 import { TapButton } from './TapButton';
 import { useApp } from '../context/AppContext';
-import { Transaction } from '../database';
+import { Transaction, atomicBatch, AtomicOp } from '../database';
 import { getTodayString, formatAmountRaw, getCurrencySymbol } from '../utils/formatters';
 
 const NUMPAD_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'backspace'];
@@ -17,7 +17,7 @@ function EditIncomeInner({
   tx: Transaction;
   onCloseClean: () => void;
 }) {
-  const { accounts, settings, updateAccount, updateTransaction } = useApp();
+  const { accounts, settings, refresh } = useApp();
   const close = useModalClose();
   const symbol = getCurrencySymbol(settings.currency);
 
@@ -28,6 +28,8 @@ function EditIncomeInner({
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showAccountSheet, setShowAccountSheet] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const savingRef = useRef(false);
 
   const selectedAccount = accounts.find((a) => a.id === accountId) ?? accounts[0];
   const displayAmount = formatAmountRaw(amount, symbol);
@@ -49,9 +51,12 @@ function EditIncomeInner({
   }, []);
 
   const handleSave = useCallback(async () => {
+    if (savingRef.current) return;
     const newAmount = parseFloat(amount);
     if (!newAmount || newAmount <= 0 || !accountId) return;
+    savingRef.current = true;
     setSaving(true);
+    setSaveError('');
     try {
       const oldAmount = tx.amount;
       const oldAccountId = tx.accountId;
@@ -65,26 +70,31 @@ function EditIncomeInner({
       adjust(oldAccountId, -oldAmount);
       adjust(accountId, newAmount);
 
+      const ops: AtomicOp[] = [];
       for (const [id, delta] of adjustments) {
         if (delta !== 0) {
           const acc = accounts.find((a) => a.id === id);
-          if (acc) await updateAccount(id, { balance: acc.balance + delta });
+          if (acc) ops.push({ store: 'accounts', type: 'put', value: { ...acc, balance: acc.balance + delta } });
         }
       }
-
-      await updateTransaction(tx.id, {
-        amount: newAmount,
-        accountId,
-        note: note.trim(),
-        date,
+      ops.push({
+        store: 'transactions',
+        type: 'put',
+        value: { ...tx, amount: newAmount, accountId, note: note.trim(), date },
       });
+
+      await atomicBatch(ops);
+      await refresh();
 
       setSuccess(true);
       setTimeout(() => onCloseClean(), 600);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save. Please try again.');
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
-  }, [amount, accountId, note, date, tx, accounts, updateAccount, updateTransaction, onCloseClean]);
+  }, [amount, accountId, note, date, tx, accounts, refresh, onCloseClean]);
 
   if (success) {
     return (
@@ -171,6 +181,10 @@ function EditIncomeInner({
             style={{ userSelect: 'text', touchAction: 'auto' }}
           />
         </div>
+
+        {saveError && (
+          <p className="text-xs text-red-400 text-center">{saveError}</p>
+        )}
       </div>
 
       <div className="px-5 py-4 flex-shrink-0 border-t border-white/5">

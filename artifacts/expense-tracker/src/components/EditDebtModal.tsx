@@ -1,10 +1,10 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { X, ChevronDown, Delete, Check, AlertTriangle } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
 import { AccountSheet } from './AccountSheet';
 import { TapButton } from './TapButton';
 import { useApp } from '../context/AppContext';
-import { Transaction } from '../database';
+import { Transaction, atomicBatch, AtomicOp } from '../database';
 import { getTodayString, formatAmountRaw, getCurrencySymbol } from '../utils/formatters';
 
 const NUMPAD_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'backspace'];
@@ -17,7 +17,7 @@ function EditDebtInner({
   tx: Transaction;
   onCloseClean: () => void;
 }) {
-  const { accounts, settings, updateAccount, updateTransaction } = useApp();
+  const { accounts, settings, refresh } = useApp();
   const close = useModalClose();
   const symbol = getCurrencySymbol(settings.currency);
 
@@ -31,6 +31,8 @@ function EditDebtInner({
   const [success, setSuccess] = useState(false);
   const [showAccountSheet, setShowAccountSheet] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const savingRef = useRef(false);
 
   const hasPayments = (tx.history ?? []).length > 0;
   const selectedAccount = accounts.find((a) => a.id === accountId) ?? accounts[0];
@@ -67,10 +69,15 @@ function EditDebtInner({
   const financialFieldsChanged = financialAmountsChanged || isOldChanged;
 
   const handleSave = useCallback(async () => {
+    if (savingRef.current) return;
     const newAmount = parseFloat(amount);
     if (!newAmount || newAmount <= 0 || !accountId) return;
+    savingRef.current = true;
     setSaving(true);
+    setSaveError('');
     try {
+      const ops: AtomicOp[] = [];
+
       if (financialFieldsChanged) {
         const adjustments = new Map<string, number>();
         const adjust = (id: string | undefined, delta: number) => {
@@ -111,43 +118,54 @@ function EditDebtInner({
         for (const [id, delta] of adjustments) {
           if (delta !== 0) {
             const acc = accounts.find((a) => a.id === id);
-            if (acc) await updateAccount(id, { balance: acc.balance + delta });
+            if (acc) ops.push({ store: 'accounts', type: 'put', value: { ...acc, balance: acc.balance + delta } });
           }
         }
 
         if (financialAmountsChanged) {
-          await updateTransaction(tx.id, {
-            amount: newAmount,
-            accountId,
-            note: note.trim(),
-            date,
-            debtType,
-            isOld,
-            remainingAmount: newAmount,
-            status: 'active',
-            history: [],
+          ops.push({
+            store: 'transactions',
+            type: 'put',
+            value: {
+              ...tx,
+              amount: newAmount,
+              accountId,
+              note: note.trim(),
+              date,
+              debtType,
+              isOld,
+              remainingAmount: newAmount,
+              status: 'active' as const,
+              history: [],
+            },
           });
         } else {
-          await updateTransaction(tx.id, {
-            note: note.trim(),
-            date,
-            isOld,
+          ops.push({
+            store: 'transactions',
+            type: 'put',
+            value: { ...tx, note: note.trim(), date, isOld },
           });
         }
       } else {
-        await updateTransaction(tx.id, {
-          note: note.trim(),
-          date,
-          isOld,
+        ops.push({
+          store: 'transactions',
+          type: 'put',
+          value: { ...tx, note: note.trim(), date, isOld },
         });
       }
 
+      await atomicBatch(ops);
+      await refresh();
+
       setSuccess(true);
       setTimeout(() => onCloseClean(), 600);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save. Please try again.');
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
-  }, [amount, accountId, note, date, debtType, isOld, tx, accounts, updateAccount, updateTransaction, onCloseClean, financialFieldsChanged, financialAmountsChanged]);
+  }, [amount, accountId, note, date, debtType, isOld, tx, accounts, refresh, onCloseClean, financialFieldsChanged, financialAmountsChanged]);
 
   const handleSaveOrConfirm = useCallback(() => {
     if (hasPayments && financialAmountsChanged && !confirmingReset) {
@@ -319,6 +337,10 @@ function EditDebtInner({
             />
           </div>
         </TapButton>
+
+        {saveError && (
+          <p className="text-xs text-red-400 text-center">{saveError}</p>
+        )}
       </div>
 
       {!confirmingReset && (

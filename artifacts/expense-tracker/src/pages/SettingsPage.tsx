@@ -14,8 +14,9 @@ import { CategoryFormModal, type CategoryFormData } from '../components/Category
 import { AccountFormModal, type AccountFormData } from '../components/AccountFormModal';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { GenericPageSkeleton } from '../components/Skeleton';
+import { TapButton } from '../components/TapButton';
 import { exportToCSV } from '../utils/export';
-import { Category, Account, migrateIfNeeded, APP_VERSION, getTransactionsByAccount } from '../database';
+import { Category, Account, migrateIfNeeded, APP_VERSION, getTransactionsByAccount, getTransactionsByCategory } from '../database';
 import { formatCurrency } from '../utils/formatters';
 
 const TYPE_ICONS: Record<string, string> = { cash: '💵', bank: '🏦', savings: '💰' };
@@ -39,6 +40,9 @@ export function SettingsPage() {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [categoryForm, setCategoryForm] = useState<CategoryFormData>({ name: '', icon: '💰', color: '#6366F1' });
   const [categoryNameError, setCategoryNameError] = useState(false);
+  const [confirmDeleteCategoryId, setConfirmDeleteCategoryId] = useState<string | null>(null);
+  const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
+  const [categoryDeleteError, setCategoryDeleteError] = useState<string | null>(null);
 
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [showAddAccount, setShowAddAccount] = useState(false);
@@ -108,6 +112,35 @@ export function SettingsPage() {
     setEditingCategory(cat);
     setCategoryForm({ name: cat.name, icon: cat.icon, color: cat.color });
     setCategoryNameError(false);
+  };
+
+  const handleRequestDeleteCategory = async (cat: Category) => {
+    setCategoryDeleteError(null);
+    const linkedTxs = await getTransactionsByCategory(cat.id);
+    const linkedExps = expenses.filter((e) => e.category === cat.id);
+    const linkedCount = Math.max(linkedTxs.length, linkedExps.length);
+    if (linkedCount > 0) {
+      setCategoryDeleteError(
+        `"${cat.name}" has ${linkedCount} linked transaction${linkedCount > 1 ? 's' : ''}. Delete or reassign them first.`
+      );
+      return;
+    }
+    setConfirmDeleteCategoryId(cat.id);
+  };
+
+  const confirmDeleteCategory = confirmDeleteCategoryId
+    ? categories.find((c) => c.id === confirmDeleteCategoryId) ?? null
+    : null;
+
+  const handleConfirmDeleteCategory = async () => {
+    if (!confirmDeleteCategoryId) return;
+    setDeletingCategoryId(confirmDeleteCategoryId);
+    try {
+      await deleteCategory(confirmDeleteCategoryId);
+    } finally {
+      setConfirmDeleteCategoryId(null);
+      setDeletingCategoryId(null);
+    }
   };
 
   const validateAccountName = (name: string, excludeId?: string): { nameError: boolean; dupError: boolean } => {
@@ -201,14 +234,14 @@ export function SettingsPage() {
             style={{ userSelect: 'text', touchAction: 'auto' }}
           />
         </div>
-        <button
-          onClick={handleSaveBudget}
+        <TapButton
+          onTap={handleSaveBudget}
           className={`mt-3 w-full py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
             budgetSaved ? 'bg-emerald-500/15 text-emerald-400' : 'bg-indigo-500 text-white'
           }`}
         >
           {budgetSaved ? <><Check size={14} /> Saved</> : 'Save'}
-        </button>
+        </TapButton>
       </div>
 
       {/* Accounts */}
@@ -291,8 +324,9 @@ export function SettingsPage() {
                   <Pencil size={14} />
                 </button>
                 <button
-                  onClick={() => deleteCategory(cat.id)}
-                  className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg"
+                  onClick={() => handleRequestDeleteCategory(cat)}
+                  disabled={deletingCategoryId === cat.id}
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg disabled:opacity-40"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -300,6 +334,12 @@ export function SettingsPage() {
             </div>
           ))}
         </div>
+        {categoryDeleteError && (
+          <div className="mt-3 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl">
+            <p className="text-xs text-red-400 leading-relaxed">{categoryDeleteError}</p>
+            <button onClick={() => setCategoryDeleteError(null)} className="text-xs text-[#6B6B6B] mt-1 underline">Dismiss</button>
+          </div>
+        )}
       </div>
 
       {/* Data Actions */}
@@ -408,6 +448,16 @@ export function SettingsPage() {
           confirming={!!deletingAccountId}
           onCancel={() => setConfirmDeleteAccountId(null)}
           onConfirm={handleConfirmDeleteAccount}
+        />
+      )}
+
+      {confirmDeleteCategory && (
+        <ConfirmDeleteModal
+          title="Delete Category?"
+          description={confirmDeleteCategory.name}
+          confirming={!!deletingCategoryId}
+          onCancel={() => setConfirmDeleteCategoryId(null)}
+          onConfirm={handleConfirmDeleteCategory}
         />
       )}
     </div>

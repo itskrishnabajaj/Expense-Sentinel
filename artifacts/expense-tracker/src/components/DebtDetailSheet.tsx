@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { X, Check, ChevronDown } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
 import { TapButton } from './TapButton';
 import { Numpad, useNumpadInput } from './Numpad';
 import { AccountSheet } from './AccountSheet';
 import { useApp } from '../context/AppContext';
-import { Transaction } from '../database';
+import { Transaction, atomicBatch, AtomicOp, generateId } from '../database';
 import { formatCurrency, formatDate, formatAmountRaw, getCurrencySymbol, getTodayString } from '../utils/formatters';
 import { ACCOUNT_TYPE_ICONS } from '../utils/constants';
 
@@ -18,7 +18,7 @@ function DebtDetailInner({
   onCloseClean: () => void;
   onEdit: () => void;
 }) {
-  const { accounts, settings, updateAccount, updateTransaction } = useApp();
+  const { accounts, settings, refresh } = useApp();
   const close = useModalClose();
   const symbol = getCurrencySymbol(settings.currency);
 
@@ -31,6 +31,8 @@ function DebtDetailInner({
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const savingRef = useRef(false);
 
   const remaining = tx.remainingAmount ?? tx.amount;
   const total = tx.amount;
@@ -47,14 +49,15 @@ function DebtDetailInner({
     const newRemaining = Math.max(0, parseFloat((remaining - paidAmount).toFixed(2)));
     const newStatus: 'active' | 'settled' = newRemaining === 0 ? 'settled' : 'active';
 
+    const ops: AtomicOp[] = [];
     const acc = accounts.find((a) => a.id === payAccId);
     if (acc) {
       const balanceDelta = tx.debtType === 'taken' ? -paidAmount : paidAmount;
-      await updateAccount(acc.id, { balance: acc.balance + balanceDelta });
+      ops.push({ store: 'accounts', type: 'put', value: { ...acc, balance: acc.balance + balanceDelta } });
     }
 
     const payment = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      id: generateId(),
       amount: paidAmount,
       date: getTodayString(),
       note: note || undefined,
@@ -62,39 +65,57 @@ function DebtDetailInner({
       createdAt: Date.now(),
     };
 
-    await updateTransaction(tx.id, {
-      remainingAmount: newRemaining,
-      status: newStatus,
-      history: [...(tx.history ?? []), payment],
+    ops.push({
+      store: 'transactions',
+      type: 'put',
+      value: {
+        ...tx,
+        remainingAmount: newRemaining,
+        status: newStatus,
+        history: [...(tx.history ?? []), payment],
+      },
     });
-  }, [tx, remaining, accounts, updateAccount, updateTransaction]);
+
+    await atomicBatch(ops);
+    await refresh();
+  }, [tx, remaining, accounts, refresh]);
 
   const handlePayFull = useCallback(async () => {
-    if (isSettled || saving || remaining <= 0) return;
+    if (isSettled || savingRef.current || remaining <= 0) return;
+    savingRef.current = true;
     setSaving(true);
+    setSaveError('');
     try {
       await applyPayment(remaining, 'Paid in full', payAccountId);
       setSuccessMsg('Debt Settled!');
       setSuccess(true);
       setTimeout(() => onCloseClean(), 700);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save. Please try again.');
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
-  }, [remaining, isSettled, saving, applyPayment, payAccountId, onCloseClean]);
+  }, [remaining, isSettled, applyPayment, payAccountId, onCloseClean]);
 
   const handlePayPartial = useCallback(async () => {
     const paid = parseFloat(partialAmount);
-    if (!paid || paid <= 0 || paid > remaining || saving) return;
+    if (!paid || paid <= 0 || paid > remaining || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
+    setSaveError('');
     try {
       await applyPayment(paid, '', payAccountId);
       setSuccessMsg('Payment Recorded!');
       setSuccess(true);
       setTimeout(() => onCloseClean(), 700);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save. Please try again.');
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
-  }, [partialAmount, remaining, saving, applyPayment, payAccountId, onCloseClean]);
+  }, [partialAmount, remaining, applyPayment, payAccountId, onCloseClean]);
 
   if (success) {
     return (
@@ -129,7 +150,7 @@ function DebtDetailInner({
       <>
         <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0 border-b border-white/5">
           <TapButton
-            onTap={() => { setMode('detail'); setPartialAmount(''); }}
+            onTap={() => { setMode('detail'); setPartialAmount(''); setSaveError(''); }}
             className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5"
           >
             <X size={16} className="text-[#6B6B6B]" />
@@ -157,6 +178,9 @@ function DebtDetailInner({
 
           {partialParsed > remaining && (
             <p className="text-xs text-red-400 text-center">Amount exceeds remaining balance</p>
+          )}
+          {saveError && (
+            <p className="text-xs text-red-400 text-center">{saveError}</p>
           )}
 
           <Numpad onKey={handleNumKey} />
@@ -270,6 +294,10 @@ function DebtDetailInner({
               ))}
             </div>
           </div>
+        )}
+
+        {saveError && (
+          <p className="text-xs text-red-400 text-center">{saveError}</p>
         )}
       </div>
 
