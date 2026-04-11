@@ -40,8 +40,11 @@ A premium personal expense tracking Progressive Web App (PWA).
 - `DebtDetailSheet` modal: shows progress bar (paid/remaining), payment history, Pay Full / Pay Partial buttons
 - Pay Full/Partial: always adjusts account balance (even for old debts), records payment with `accountId` in `history[]`
 - `EditDebtModal`: reverses full original amount + each payment from its stored account, applies new, resets history if payments exist
-- Debt deletion: confirmation dialog shown; reverses creation impact (full amount, not remaining) + each payment from its stored account; old debts skip creation reversal but still reverse payments
+- All transaction deletions (expense/income/transfer/debt) show `ConfirmDeleteModal` before proceeding
+- Deletion pushes to undo stack (5-item limit, 5s TTL); undo re-inserts original records via `db.put` + `refresh()`
+- Debt deletion: reverses creation impact (full amount, not remaining) + each payment from its stored account; old debts skip creation reversal but still reverse payments
 - `DebtPayment` stores `accountId` for correct per-payment balance reversal on delete/edit
+- Account deletion safety: blocks if last account or if account has linked transactions
 
 **Screens:**
 1. **Home** – Monthly summary, budget progress, top categories, recent expenses
@@ -66,7 +69,8 @@ A premium personal expense tracking Progressive Web App (PWA).
 - `src/database/` – IndexedDB layer (db.ts v3, accounts.ts, transactions.ts, expenses.ts, categories.ts, settings.ts)
 - `src/context/AppContext.tsx` – Global state provider; calls `migrateIfNeeded` on init
 - `src/pages/` – 5 screens
-- `src/components/` – BottomNav, FAB, Modal, AccountSheet, AccountFormModal, IncomeModal, TransferModal, DebtModal, EditIncomeModal, EditTransferModal, EditDebtModal, DebtDetailSheet, CategoryIcon, InstallPrompt
+- `src/components/` – BottomNav, FAB, Modal, ConfirmDeleteModal, AccountSheet, AccountFormModal, IncomeModal, TransferModal, DebtModal, EditIncomeModal, EditTransferModal, EditDebtModal, DebtDetailSheet, CategoryIcon, InstallPrompt
+- `src/context/UndoContext.tsx` – Undo stack (5 items, 5s TTL) with toast UI; `pushUndo(label, asyncFn)` for ephemeral undo
 - `vite.config.ts` – PWA configuration with Workbox
 
 ## Key Commands

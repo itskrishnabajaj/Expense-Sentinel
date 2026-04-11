@@ -1,8 +1,9 @@
 import { useState, useMemo, useCallback, memo, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { Trash2, Pencil, X, Filter, Search, TrendingUp, ArrowLeftRight, AlertCircle, AlertTriangle, ShoppingBag } from 'lucide-react';
+import { Trash2, Pencil, X, Filter, Search, TrendingUp, ArrowLeftRight, AlertCircle, ShoppingBag } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useUndo } from '../context/UndoContext';
 import { CategoryIcon } from '../components/CategoryIcon';
+import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { GenericPageSkeleton } from '../components/Skeleton';
 import { AddExpense } from './AddExpense';
 import { EditIncomeModal } from '../components/EditIncomeModal';
@@ -10,7 +11,7 @@ import { EditTransferModal } from '../components/EditTransferModal';
 import { EditDebtModal } from '../components/EditDebtModal';
 import { DebtDetailSheet } from '../components/DebtDetailSheet';
 import { formatCurrency, formatDate } from '../utils/formatters';
-import { Expense, Transaction, Category } from '../database';
+import { Expense, Transaction, Category, getDB } from '../database';
 
 function groupByDate(items: Transaction[]): [string, Transaction[]][] {
   const groups: Record<string, Transaction[]> = {};
@@ -368,105 +369,6 @@ const DebtRow = memo(function DebtRow({
   );
 });
 
-function DeleteDebtConfirm({
-  tx,
-  deletingId,
-  currency,
-  onCancel,
-  onConfirm,
-}: {
-  tx: Transaction;
-  deletingId: string | null;
-  currency: string;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  useEffect(() => {
-    const main = document.querySelector('main') as HTMLElement | null;
-    const prevOverflow = main?.style.overflow ?? '';
-    if (main) main.style.overflow = 'hidden';
-    return () => { if (main) main.style.overflow = prevOverflow; };
-  }, []);
-
-  return createPortal(
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 200,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '0 24px',
-        background: 'rgba(0,0,0,0.65)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        outline: 'none',
-        border: 'none',
-      } as React.CSSProperties}
-      onClick={onCancel}
-    >
-      <div
-        className="modal-card modal-card--in"
-        style={{
-          width: '100%',
-          maxWidth: '384px',
-          background: '#1C1C1E',
-          borderRadius: '20px',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
-          overflow: 'hidden',
-          outline: 'none',
-          border: 'none',
-        }}
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
-        onPointerMove={(e) => e.stopPropagation()}
-        onPointerUp={(e) => e.stopPropagation()}
-        onPointerCancel={(e) => e.stopPropagation()}
-      >
-        <div className="p-5 space-y-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(239,68,68,0.12)' }}>
-              <AlertTriangle size={18} className="text-red-400" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-white">Delete Debt?</p>
-              <p className="text-xs text-[#6B6B6B]">
-                {formatCurrency(tx.amount, currency)}
-                {' '}{tx.debtType === 'taken' ? 'borrowed' : 'lent'}
-                {tx.note ? ` — ${tx.note}` : ''}
-              </p>
-            </div>
-          </div>
-          <p className="text-xs text-[#A0A0A0] leading-relaxed">
-            This will reverse all balance effects
-            {(tx.history ?? []).length > 0
-              ? ` including ${tx.history!.length} payment${tx.history!.length > 1 ? 's' : ''}`
-              : ''}
-            . This cannot be undone.
-          </p>
-        </div>
-        <div className="flex border-t border-white/5">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3.5 text-sm font-medium text-[#A0A0A0] active:bg-white/5 transition-colors"
-          >
-            Cancel
-          </button>
-          <div className="w-px bg-white/5" />
-          <button
-            onClick={onConfirm}
-            disabled={deletingId === tx.id}
-            className="flex-1 py-3.5 text-sm font-semibold text-red-400 active:bg-red-500/10 transition-colors disabled:opacity-40"
-          >
-            {deletingId === tx.id ? 'Deleting…' : 'Delete'}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
 
 export function History() {
   const {
@@ -479,7 +381,9 @@ export function History() {
     deleteTransaction,
     updateAccount,
     loading,
+    refresh,
   } = useApp();
+  const { pushUndo } = useUndo();
 
   const [filterType, setFilterType] = useState<FilterKey>('all');
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -488,7 +392,7 @@ export function History() {
   const [editingDebt, setEditingDebt] = useState<Transaction | null>(null);
   const [viewingDebt, setViewingDebt] = useState<Transaction | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [confirmDeleteDebt, setConfirmDeleteDebt] = useState<Transaction | null>(null);
+  const [confirmDeleteTx, setConfirmDeleteTx] = useState<Transaction | null>(null);
   const [showFilter, setShowFilter] = useState(false);
   const [settledOpen, setSettledOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -561,74 +465,104 @@ export function History() {
   const showIncomeSection = filterType === 'all' || filterType === 'income';
   const showTransferSection = filterType === 'all' || filterType === 'transfer';
 
-  const handleDeleteTransaction = useCallback(async (tx: Transaction) => {
-    if (tx.type === 'debt') {
-      setConfirmDeleteDebt(tx);
-      return;
-    }
+  const handleDeleteTransaction = useCallback((tx: Transaction) => {
+    setConfirmDeleteTx(tx);
+  }, []);
+
+  const executeDelete = useCallback(async (tx: Transaction) => {
+    setConfirmDeleteTx(null);
     setDeletingId(tx.id);
+
+    const balanceChanges: { accId: string; delta: number }[] = [];
+
     try {
+      let deletedExpense: Expense | undefined;
+
       if (tx.type === 'expense') {
         const expId = tx.expenseId ?? tx.id;
+        deletedExpense = expenses.find((e) => e.id === expId);
         await deleteExpense(expId);
-        try { await deleteTransaction(tx.id); } catch { /* legacy expenses may not have tx record */ }
+        try { await deleteTransaction(tx.id); } catch { /* legacy */ }
         if (tx.accountId) {
           const acc = accounts.find((a) => a.id === tx.accountId);
-          if (acc) await updateAccount(tx.accountId, { balance: acc.balance + tx.amount });
+          if (acc) {
+            await updateAccount(tx.accountId, { balance: acc.balance + tx.amount });
+            balanceChanges.push({ accId: tx.accountId, delta: tx.amount });
+          }
         }
+      } else if (tx.type === 'debt') {
+        const adjustments = new Map<string, number>();
+        const adjust = (id: string | undefined, delta: number) => {
+          if (!id) return;
+          adjustments.set(id, (adjustments.get(id) ?? 0) + delta);
+        };
+        if (!tx.isOld && tx.accountId) {
+          adjust(tx.accountId, tx.debtType === 'taken' ? -tx.amount : tx.amount);
+        }
+        if (tx.history && tx.history.length > 0) {
+          for (const payment of tx.history) {
+            const payAccId = tx.isOld ? payment.accountId : (payment.accountId ?? tx.accountId);
+            if (!payAccId) continue;
+            adjust(payAccId, tx.debtType === 'taken' ? payment.amount : -payment.amount);
+          }
+        }
+        for (const [accId, delta] of adjustments) {
+          if (delta !== 0) {
+            const acc = accounts.find((a) => a.id === accId);
+            if (acc) {
+              await updateAccount(accId, { balance: acc.balance + delta });
+              balanceChanges.push({ accId, delta });
+            }
+          }
+        }
+        await deleteTransaction(tx.id);
       } else {
         await deleteTransaction(tx.id);
         if (tx.type === 'income' && tx.accountId) {
           const acc = accounts.find((a) => a.id === tx.accountId);
-          if (acc) await updateAccount(tx.accountId, { balance: acc.balance - tx.amount });
+          if (acc) {
+            await updateAccount(tx.accountId, { balance: acc.balance - tx.amount });
+            balanceChanges.push({ accId: tx.accountId, delta: -tx.amount });
+          }
         } else if (tx.type === 'transfer') {
           const from = tx.fromAccountId ? accounts.find((a) => a.id === tx.fromAccountId) : undefined;
           const to = tx.toAccountId ? accounts.find((a) => a.id === tx.toAccountId) : undefined;
-          if (from && tx.fromAccountId) await updateAccount(tx.fromAccountId, { balance: from.balance + tx.amount });
-          if (to && tx.toAccountId) await updateAccount(tx.toAccountId, { balance: to.balance - tx.amount });
+          if (from && tx.fromAccountId) {
+            await updateAccount(tx.fromAccountId, { balance: from.balance + tx.amount });
+            balanceChanges.push({ accId: tx.fromAccountId, delta: tx.amount });
+          }
+          if (to && tx.toAccountId) {
+            await updateAccount(tx.toAccountId, { balance: to.balance - tx.amount });
+            balanceChanges.push({ accId: tx.toAccountId, delta: -tx.amount });
+          }
         }
       }
+
+      const typeLabel = tx.type === 'debt'
+        ? (tx.debtType === 'taken' ? 'borrowed' : 'lent')
+        : tx.type;
+      const label = `${typeLabel} ${formatCurrency(tx.amount, settings.currency)} deleted`;
+
+      const capturedTx = { ...tx };
+      const capturedExpense = deletedExpense ? { ...deletedExpense } : undefined;
+      const capturedBalanceChanges = [...balanceChanges];
+
+      pushUndo(label, async () => {
+        const db = await getDB();
+        await db.put('transactions', capturedTx);
+        if (capturedExpense) {
+          await db.put('expenses', capturedExpense);
+        }
+        for (const { accId, delta } of capturedBalanceChanges) {
+          const acc = await db.get('accounts', accId);
+          if (acc) await db.put('accounts', { ...acc, balance: acc.balance - delta });
+        }
+        await refresh();
+      });
     } finally {
       setDeletingId(null);
     }
-  }, [deleteExpense, deleteTransaction, updateAccount, accounts]);
-
-  const executeDebtDelete = useCallback(async (tx: Transaction) => {
-    setConfirmDeleteDebt(null);
-    setDeletingId(tx.id);
-    try {
-      const adjustments = new Map<string, number>();
-      const adjust = (id: string | undefined, delta: number) => {
-        if (!id) return;
-        adjustments.set(id, (adjustments.get(id) ?? 0) + delta);
-      };
-
-      if (!tx.isOld && tx.accountId) {
-        const creationDelta = tx.debtType === 'taken' ? -tx.amount : tx.amount;
-        adjust(tx.accountId, creationDelta);
-      }
-
-      if (tx.history && tx.history.length > 0) {
-        for (const payment of tx.history) {
-          const payAccId = tx.isOld ? payment.accountId : (payment.accountId ?? tx.accountId);
-          if (!payAccId) continue;
-          const paymentReverseDelta = tx.debtType === 'taken' ? payment.amount : -payment.amount;
-          adjust(payAccId, paymentReverseDelta);
-        }
-      }
-
-      for (const [accId, delta] of adjustments) {
-        if (delta !== 0) {
-          const acc = accounts.find((a) => a.id === accId);
-          if (acc) await updateAccount(accId, { balance: acc.balance + delta });
-        }
-      }
-
-      await deleteTransaction(tx.id);
-    } finally {
-      setDeletingId(null);
-    }
-  }, [deleteTransaction, updateAccount, accounts]);
+  }, [deleteExpense, deleteTransaction, updateAccount, accounts, expenses, settings.currency, pushUndo, refresh]);
 
   const handleEditTx = useCallback((tx: Transaction) => {
     if (tx.type === 'income') setEditingIncome(tx);
@@ -873,13 +807,30 @@ export function History() {
         </div>
       )}
 
-      {confirmDeleteDebt && <DeleteDebtConfirm
-        tx={confirmDeleteDebt}
-        deletingId={deletingId}
-        currency={settings.currency}
-        onCancel={() => setConfirmDeleteDebt(null)}
-        onConfirm={() => executeDebtDelete(confirmDeleteDebt)}
-      />}
+      {confirmDeleteTx && (
+        <ConfirmDeleteModal
+          title={`Delete ${confirmDeleteTx.type === 'debt'
+            ? 'Debt'
+            : confirmDeleteTx.type === 'expense'
+            ? 'Expense'
+            : confirmDeleteTx.type === 'income'
+            ? 'Income'
+            : 'Transfer'}?`}
+          description={`${formatCurrency(confirmDeleteTx.amount, settings.currency)}${
+            confirmDeleteTx.type === 'debt'
+              ? ` ${confirmDeleteTx.debtType === 'taken' ? 'borrowed' : 'lent'}`
+              : ''
+          }${confirmDeleteTx.note ? ` — ${confirmDeleteTx.note}` : ''}`}
+          warning={
+            confirmDeleteTx.type === 'debt' && (confirmDeleteTx.history ?? []).length > 0
+              ? `This will reverse all balance effects including ${confirmDeleteTx.history!.length} payment${confirmDeleteTx.history!.length > 1 ? 's' : ''}.`
+              : 'This will reverse all balance effects.'
+          }
+          confirming={deletingId === confirmDeleteTx.id}
+          onCancel={() => setConfirmDeleteTx(null)}
+          onConfirm={() => executeDelete(confirmDeleteTx)}
+        />
+      )}
 
       {viewingDebt && (
         <DebtDetailSheet

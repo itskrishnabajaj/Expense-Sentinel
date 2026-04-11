@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
+import { UndoProvider } from './context/UndoContext';
 import { BottomNav } from './components/BottomNav';
 import { InstallPrompt } from './components/InstallPrompt';
 import { FAB } from './components/FAB';
@@ -65,9 +66,11 @@ function App() {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
   return (
     <AppProvider>
-      <BrowserRouter basename={base}>
-        <AnimatedRoutes />
-      </BrowserRouter>
+      <UndoProvider>
+        <BrowserRouter basename={base}>
+          <AnimatedRoutes />
+        </BrowserRouter>
+      </UndoProvider>
     </AppProvider>
   );
 }

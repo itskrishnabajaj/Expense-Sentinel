@@ -12,9 +12,10 @@ import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { CategoryFormModal, type CategoryFormData } from '../components/CategoryFormModal';
 import { AccountFormModal, type AccountFormData } from '../components/AccountFormModal';
+import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { GenericPageSkeleton } from '../components/Skeleton';
 import { exportToCSV } from '../utils/export';
-import { Category, Account, migrateIfNeeded, APP_VERSION } from '../database';
+import { Category, Account, migrateIfNeeded, APP_VERSION, getTransactionsByAccount } from '../database';
 import { formatCurrency } from '../utils/formatters';
 
 const TYPE_ICONS: Record<string, string> = { cash: '💵', bank: '🏦', savings: '💰' };
@@ -46,6 +47,7 @@ export function SettingsPage() {
   const [accountDupError, setAccountDupError] = useState(false);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState<Account | null>(null);
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
+  const [accountDeleteError, setAccountDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     setBudgetInput(String(settings.monthly_budget));
@@ -141,6 +143,22 @@ export function SettingsPage() {
     setAccountDupError(false);
   };
 
+  const handleRequestDeleteAccount = async (acc: Account) => {
+    setAccountDeleteError(null);
+    if (accounts.length <= 1) {
+      setAccountDeleteError('You must keep at least one account.');
+      return;
+    }
+    const linkedTxs = await getTransactionsByAccount(acc.id);
+    if (linkedTxs.length > 0) {
+      setAccountDeleteError(
+        `"${acc.name}" has ${linkedTxs.length} linked transaction${linkedTxs.length > 1 ? 's' : ''}. Delete or reassign them first.`
+      );
+      return;
+    }
+    setConfirmDeleteAccount(acc);
+  };
+
   const handleConfirmDeleteAccount = async () => {
     if (!confirmDeleteAccount) return;
     setDeletingAccountId(confirmDeleteAccount.id);
@@ -222,8 +240,8 @@ export function SettingsPage() {
                     <Pencil size={14} />
                   </button>
                   <button
-                    onClick={() => accounts.length > 1 ? setConfirmDeleteAccount(acc) : undefined}
-                    disabled={accounts.length <= 1 || deletingAccountId === acc.id}
+                    onClick={() => handleRequestDeleteAccount(acc)}
+                    disabled={deletingAccountId === acc.id}
                     className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-opacity ${
                       accounts.length <= 1 ? 'text-[#333333] cursor-not-allowed opacity-40' : 'text-[#6B6B6B]'
                     }`}
@@ -234,6 +252,12 @@ export function SettingsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        {accountDeleteError && (
+          <div className="mt-3 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl">
+            <p className="text-xs text-red-400 leading-relaxed">{accountDeleteError}</p>
+            <button onClick={() => setAccountDeleteError(null)} className="text-xs text-[#6B6B6B] mt-1 underline">Dismiss</button>
           </div>
         )}
       </div>
@@ -330,32 +354,17 @@ export function SettingsPage() {
         <p className="text-xs text-[#333333] mt-1">All data stored locally on your device</p>
       </div>
 
-      {/* Reset Confirmation */}
       {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
-          <div className="absolute inset-0 bg-black/70 animate-fade-overlay" onClick={() => setShowResetConfirm(false)} />
-          <div className="relative bg-[#1A1A1A] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-scale-in">
-            <h3 className="text-base font-semibold text-white mb-2">Reset All Data?</h3>
-            <p className="text-sm text-[#A0A0A0] mb-6">
-              This will permanently delete all {expenses.length} expenses, categories, accounts, and settings. This cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowResetConfirm(false)}
-                className="flex-1 py-3 rounded-xl text-sm font-medium text-[#A0A0A0] bg-white/5"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleReset}
-                disabled={resetting}
-                className="flex-1 py-3 rounded-xl text-sm font-medium text-white bg-red-500 disabled:opacity-50"
-              >
-                {resetting ? 'Resetting...' : 'Reset'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDeleteModal
+          title="Reset All Data?"
+          description={`${expenses.length} expenses, categories, accounts, and settings`}
+          warning="This will permanently delete everything. This cannot be undone."
+          confirmLabel="Reset"
+          confirmingLabel="Resetting…"
+          confirming={resetting}
+          onCancel={() => setShowResetConfirm(false)}
+          onConfirm={handleReset}
+        />
       )}
 
       {/* Add/Edit Category Modal */}
@@ -383,37 +392,19 @@ export function SettingsPage() {
         />
       )}
 
-      {/* Delete Account Confirmation */}
       {confirmDeleteAccount && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
-          <div className="absolute inset-0 bg-black/70 animate-fade-overlay" onClick={() => setConfirmDeleteAccount(null)} />
-          <div className="relative bg-[#1A1A1A] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-scale-in">
-            <h3 className="text-base font-semibold text-white mb-2">Delete Account?</h3>
-            <p className="text-sm text-[#A0A0A0] mb-6">
-              Delete <span className="text-white font-medium">{confirmDeleteAccount.name}</span>?
-              {confirmDeleteAccount.balance !== 0 && (
-                <span className="block mt-1 text-amber-400 text-xs">
-                  This account has a balance of {formatCurrency(confirmDeleteAccount.balance, settings.currency)}. Deleting it will remove this balance.
-                </span>
-              )}
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmDeleteAccount(null)}
-                className="flex-1 py-3 rounded-xl text-sm font-medium text-[#A0A0A0] bg-white/5"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmDeleteAccount}
-                disabled={!!deletingAccountId}
-                className="flex-1 py-3 rounded-xl text-sm font-medium text-white bg-red-500 disabled:opacity-50"
-              >
-                {deletingAccountId ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDeleteModal
+          title="Delete Account?"
+          description={confirmDeleteAccount.name}
+          warning={
+            confirmDeleteAccount.balance !== 0
+              ? `This account has a balance of ${formatCurrency(confirmDeleteAccount.balance, settings.currency)}. Deleting it will remove this balance.`
+              : undefined
+          }
+          confirming={!!deletingAccountId}
+          onCancel={() => setConfirmDeleteAccount(null)}
+          onConfirm={handleConfirmDeleteAccount}
+        />
       )}
     </div>
   );
