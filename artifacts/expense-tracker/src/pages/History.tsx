@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, memo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Trash2, Pencil, X, Filter, Search, TrendingUp, ArrowLeftRight, AlertCircle, AlertTriangle, ShoppingBag } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CategoryIcon } from '../components/CategoryIcon';
@@ -311,16 +312,20 @@ const DebtRow = memo(function DebtRow({
                 {tx.debtType === 'taken' ? '+' : '-'}{formatCurrency(total, currency)}
               </span>
               <button
-                onClick={(e) => { e.stopPropagation(); onEdit(tx); }}
-                className="min-w-[40px] min-h-[40px] flex items-center justify-center text-[#6B6B6B] rounded-lg"
+                onPointerDown={(e) => e.stopPropagation()}
+                onPointerUp={(e) => { e.stopPropagation(); onEdit(tx); }}
+                onClick={(e) => e.stopPropagation()}
+                className="min-w-[40px] min-h-[40px] flex items-center justify-center text-[#6B6B6B] rounded-lg active:text-white"
                 aria-label="Edit debt"
               >
                 <Pencil size={13} />
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); onDelete(tx); }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onPointerUp={(e) => { e.stopPropagation(); if (deletingId !== tx.id) onDelete(tx); }}
+                onClick={(e) => e.stopPropagation()}
                 disabled={deletingId === tx.id}
-                className="min-w-[40px] min-h-[40px] flex items-center justify-center text-[#6B6B6B] rounded-lg disabled:opacity-40"
+                className="min-w-[40px] min-h-[40px] flex items-center justify-center text-[#6B6B6B] rounded-lg disabled:opacity-40 active:text-white"
                 aria-label="Delete debt"
               >
                 <Trash2 size={13} />
@@ -352,6 +357,99 @@ const DebtRow = memo(function DebtRow({
     </div>
   );
 });
+
+function DeleteDebtConfirm({
+  tx,
+  deletingId,
+  currency,
+  onCancel,
+  onConfirm,
+}: {
+  tx: Transaction;
+  deletingId: string | null;
+  currency: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  useEffect(() => {
+    const main = document.querySelector('main') as HTMLElement | null;
+    const prevOverflow = main?.style.overflow ?? '';
+    if (main) main.style.overflow = 'hidden';
+    return () => { if (main) main.style.overflow = prevOverflow; };
+  }, []);
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 200,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0 24px',
+        background: 'rgba(0,0,0,0.65)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+      } as React.CSSProperties}
+      onClick={onCancel}
+    >
+      <div
+        className="modal-card modal-card--in"
+        style={{
+          width: '100%',
+          maxWidth: '384px',
+          background: '#1C1C1E',
+          borderRadius: '20px',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+          overflow: 'hidden',
+        }}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="p-5 space-y-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(239,68,68,0.12)' }}>
+              <AlertTriangle size={18} className="text-red-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white">Delete Debt?</p>
+              <p className="text-xs text-[#6B6B6B]">
+                {formatCurrency(tx.amount, currency)}
+                {' '}{tx.debtType === 'taken' ? 'borrowed' : 'lent'}
+                {tx.note ? ` — ${tx.note}` : ''}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-[#A0A0A0] leading-relaxed">
+            This will reverse all balance effects
+            {(tx.history ?? []).length > 0
+              ? ` including ${tx.history!.length} payment${tx.history!.length > 1 ? 's' : ''}`
+              : ''}
+            . This cannot be undone.
+          </p>
+        </div>
+        <div className="flex border-t border-white/5">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-3.5 text-sm font-medium text-[#A0A0A0] active:bg-white/5 transition-colors"
+          >
+            Cancel
+          </button>
+          <div className="w-px bg-white/5" />
+          <button
+            onClick={onConfirm}
+            disabled={deletingId === tx.id}
+            className="flex-1 py-3.5 text-sm font-semibold text-red-400 active:bg-red-500/10 transition-colors disabled:opacity-40"
+          >
+            {deletingId === tx.id ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 export function History() {
   const {
@@ -758,50 +856,13 @@ export function History() {
         </div>
       )}
 
-      {confirmDeleteDebt && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center px-6" style={{ background: 'rgba(0,0,0,0.7)' }}>
-          <div className="bg-[#1A1A1A] rounded-2xl border border-white/10 w-full max-w-sm overflow-hidden shadow-2xl">
-            <div className="p-5 space-y-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(239,68,68,0.12)' }}>
-                  <AlertTriangle size={18} className="text-red-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">Delete Debt?</p>
-                  <p className="text-xs text-[#6B6B6B]">
-                    {formatCurrency(confirmDeleteDebt.amount, settings.currency)}
-                    {' '}{confirmDeleteDebt.debtType === 'taken' ? 'borrowed' : 'lent'}
-                    {confirmDeleteDebt.note ? ` — ${confirmDeleteDebt.note}` : ''}
-                  </p>
-                </div>
-              </div>
-              <p className="text-xs text-[#A0A0A0] leading-relaxed">
-                This will reverse all balance effects
-                {(confirmDeleteDebt.history ?? []).length > 0
-                  ? ` including ${confirmDeleteDebt.history!.length} payment${confirmDeleteDebt.history!.length > 1 ? 's' : ''}`
-                  : ''}
-                . This cannot be undone.
-              </p>
-            </div>
-            <div className="flex border-t border-white/5">
-              <button
-                onClick={() => setConfirmDeleteDebt(null)}
-                className="flex-1 py-3.5 text-sm font-medium text-[#A0A0A0] active:bg-white/5 transition-colors"
-              >
-                Cancel
-              </button>
-              <div className="w-px bg-white/5" />
-              <button
-                onClick={() => executeDebtDelete(confirmDeleteDebt)}
-                disabled={deletingId === confirmDeleteDebt.id}
-                className="flex-1 py-3.5 text-sm font-semibold text-red-400 active:bg-red-500/10 transition-colors disabled:opacity-40"
-              >
-                {deletingId === confirmDeleteDebt.id ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {confirmDeleteDebt && <DeleteDebtConfirm
+        tx={confirmDeleteDebt}
+        deletingId={deletingId}
+        currency={settings.currency}
+        onCancel={() => setConfirmDeleteDebt(null)}
+        onConfirm={() => executeDebtDelete(confirmDeleteDebt)}
+      />}
 
       {viewingDebt && (
         <DebtDetailSheet
