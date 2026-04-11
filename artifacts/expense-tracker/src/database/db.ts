@@ -252,16 +252,27 @@ export interface AtomicOp {
 }
 
 export async function atomicBatch(ops: AtomicOp[]): Promise<void> {
+  if (ops.length === 0) return;
+
+  for (const op of ops) {
+    if (op.type === 'delete' && !op.key) {
+      throw new Error(`atomicBatch: delete op on '${op.store}' missing key`);
+    }
+    if (op.type === 'put' && !op.value) {
+      throw new Error(`atomicBatch: put op on '${op.store}' missing value`);
+    }
+  }
+
   const db = await getDB();
   const storeNames = [...new Set(ops.map((o) => o.store))] as ('expenses' | 'transactions' | 'accounts')[];
   const idbTx = db.transaction(storeNames, 'readwrite');
 
   for (const op of ops) {
     const store = idbTx.objectStore(op.store);
-    if (op.type === 'delete' && op.key) {
-      await store.delete(op.key);
-    } else if (op.type === 'put' && op.value) {
-      await store.put(op.value);
+    if (op.type === 'delete') {
+      await store.delete(op.key!);
+    } else {
+      await store.put(op.value!);
     }
   }
 
