@@ -116,16 +116,23 @@ export function SettingsPage() {
 
   const handleRequestDeleteCategory = async (cat: Category) => {
     setCategoryDeleteError(null);
-    const linkedTxs = await getTransactionsByCategory(cat.id);
-    const linkedExps = expenses.filter((e) => e.category === cat.id);
-    const linkedCount = Math.max(linkedTxs.length, linkedExps.length);
-    if (linkedCount > 0) {
-      setCategoryDeleteError(
-        `"${cat.name}" has ${linkedCount} linked transaction${linkedCount > 1 ? 's' : ''}. Delete or reassign them first.`
-      );
-      return;
+    try {
+      const linkedTxs = await getTransactionsByCategory(cat.id);
+      const linkedExps = expenses.filter((e) => e.category === cat.id);
+      const effectiveCount = Math.max(linkedTxs.length, linkedExps.length);
+      if (effectiveCount > 0) {
+        const parts: string[] = [];
+        if (linkedTxs.length > 0) parts.push(`${linkedTxs.length} transaction${linkedTxs.length > 1 ? 's' : ''}`);
+        if (linkedExps.length > 0 && linkedTxs.length === 0) parts.push(`${linkedExps.length} expense${linkedExps.length > 1 ? 's' : ''}`);
+        setCategoryDeleteError(
+          `"${cat.name}" has ${parts.join(' and ')} linked. Delete or reassign them first.`
+        );
+        return;
+      }
+      setConfirmDeleteCategoryId(cat.id);
+    } catch {
+      setCategoryDeleteError('Failed to check linked records. Please try again.');
     }
-    setConfirmDeleteCategoryId(cat.id);
   };
 
   const confirmDeleteCategory = confirmDeleteCategoryId
