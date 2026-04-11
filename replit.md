@@ -68,7 +68,7 @@ A premium personal expense tracking Progressive Web App (PWA).
 **Shared Utilities (from Task #2 refactor):**
 - `src/utils/constants.ts` – `ACCOUNT_TYPE_ICONS`, `NUMPAD_KEYS` (shared across all modals/pages)
 - `src/utils/dateFilters.ts` – `filterByMonth`, `filterByThisWeek`, `filterByLastWeek` (used by Home, Insights)
-- `src/components/Numpad.tsx` – `Numpad` component + `useNumpadInput` hook (used by AddExpense, IncomeModal, TransferModal, DebtModal; DebtDetailSheet uses its own inline numpad)
+- `src/components/Numpad.tsx` – `Numpad` component + `useNumpadInput` hook (used by AddExpense, IncomeModal, TransferModal, DebtModal, DebtDetailSheet)
 - `src/components/TransactionDisplay.tsx` – `TxIcon`, `TxAmount`, `getTxLabel`, `getTxAmountInfo` (used by Home, History)
 
 **Key files:**
