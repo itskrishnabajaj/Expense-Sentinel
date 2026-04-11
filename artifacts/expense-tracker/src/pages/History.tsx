@@ -324,7 +324,7 @@ export function History() {
   const [editingDebt, setEditingDebt] = useState<Transaction | null>(null);
   const [viewingDebt, setViewingDebt] = useState<Transaction | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<{ type: string; id: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ type: string; id: string; nonce: number } | null>(null);
   const [showFilter, setShowFilter] = useState(false);
   const [settledOpen, setSettledOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -397,8 +397,10 @@ export function History() {
   const showIncomeSection = filterType === 'all' || filterType === 'income';
   const showTransferSection = filterType === 'all' || filterType === 'transfer';
 
+  const deleteNonceRef = useRef(0);
+
   const handleDeleteTransaction = useCallback((tx: Transaction) => {
-    setConfirmDelete({ type: tx.type, id: tx.id });
+    setConfirmDelete((prev) => prev ? prev : { type: tx.type, id: tx.id, nonce: ++deleteNonceRef.current });
   }, []);
 
   const confirmDeleteTx = useMemo(
@@ -406,13 +408,13 @@ export function History() {
     [confirmDelete, allItems]
   );
 
+  const deletingRef = useRef(false);
+
   useEffect(() => {
-    if (confirmDelete && !confirmDeleteTx) {
+    if (confirmDelete && !confirmDeleteTx && !deletingRef.current) {
       setConfirmDelete(null);
     }
   }, [confirmDelete, confirmDeleteTx]);
-
-  const deletingRef = useRef(false);
 
   const executeDeleteById = useCallback(async (txId: string) => {
     if (deletingRef.current) return;
@@ -770,8 +772,9 @@ export function History() {
         </div>
       )}
 
-      {confirmDeleteTx && (
+      {confirmDeleteTx && confirmDelete && (
         <ConfirmDeleteModal
+          key={confirmDelete.nonce}
           title={`Delete ${confirmDeleteTx.type === 'debt'
             ? 'Debt'
             : confirmDeleteTx.type === 'expense'

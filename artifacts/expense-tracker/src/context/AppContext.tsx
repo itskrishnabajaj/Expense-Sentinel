@@ -53,10 +53,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [dbUnavailable, setDbUnavailable] = useState(false);
   const loadIdRef = useRef(0);
+  const initialLoadDone = useRef(false);
 
   const loadAll = useCallback(async () => {
     const thisLoadId = ++loadIdRef.current;
-    setLoading(true);
+    if (!initialLoadDone.current) setLoading(true);
     try {
       await migrateIfNeeded();
       await ensureDefaultAccount();
@@ -78,7 +79,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (thisLoadId !== loadIdRef.current) return;
       setDbUnavailable(true);
     } finally {
-      if (thisLoadId === loadIdRef.current) setLoading(false);
+      if (thisLoadId === loadIdRef.current) {
+        initialLoadDone.current = true;
+        setLoading(false);
+      }
     }
   }, []);
 
