@@ -392,7 +392,7 @@ export function History() {
   const [editingDebt, setEditingDebt] = useState<Transaction | null>(null);
   const [viewingDebt, setViewingDebt] = useState<Transaction | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ type: string; id: string } | null>(null);
   const [showFilter, setShowFilter] = useState(false);
   const [settledOpen, setSettledOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -466,16 +466,16 @@ export function History() {
   const showTransferSection = filterType === 'all' || filterType === 'transfer';
 
   const handleDeleteTransaction = useCallback((tx: Transaction) => {
-    setConfirmDeleteId((prev) => prev ? prev : tx.id);
+    setConfirmDelete((prev) => prev ? prev : { type: tx.type, id: tx.id });
   }, []);
 
   const confirmDeleteTx = useMemo(
-    () => confirmDeleteId ? allItems.find((t) => t.id === confirmDeleteId) ?? null : null,
-    [confirmDeleteId, allItems]
+    () => confirmDelete ? allItems.find((t) => t.id === confirmDelete.id) ?? null : null,
+    [confirmDelete, allItems]
   );
 
   const executeDeleteById = useCallback(async (txId: string) => {
-    setConfirmDeleteId(null);
+    setConfirmDelete(null);
 
     const tx = allItems.find((t) => t.id === txId);
     if (!tx) return;
@@ -836,7 +836,7 @@ export function History() {
               : 'This will reverse all balance effects.'
           }
           confirming={deletingId === confirmDeleteTx.id}
-          onCancel={() => setConfirmDeleteId(null)}
+          onCancel={() => setConfirmDelete(null)}
           onConfirm={() => executeDeleteById(confirmDeleteTx.id)}
         />
       )}
