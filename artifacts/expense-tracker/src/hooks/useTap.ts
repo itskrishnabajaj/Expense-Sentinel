@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react';
 import React from 'react';
 
-const MOVE_THRESHOLD_SQ = 8 * 8;
+const MOVE_THRESHOLD_SQ = 10 * 10;
 
 export interface UseTapOptions {
   preventDefault?: boolean;

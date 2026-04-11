@@ -143,7 +143,7 @@ const TxRow = memo(function TxRow({
   const isEditable = tx.type === 'income' || tx.type === 'transfer';
 
   return (
-    <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.2)] card-press">
+    <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
       <TxTypeIcon tx={tx} catIcon={cat?.icon} catColor={cat?.color} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-white truncate">{txTitle(tx, cat?.name)}</p>
@@ -256,6 +256,7 @@ const DebtRow = memo(function DebtRow({
   onView,
   onEdit,
   onDelete,
+  settled,
 }: {
   tx: Transaction;
   accountMap: Map<string, { name: string; type: string }>;
@@ -264,6 +265,7 @@ const DebtRow = memo(function DebtRow({
   onView: (tx: Transaction) => void;
   onEdit: (tx: Transaction) => void;
   onDelete: (tx: Transaction) => void;
+  settled?: boolean;
 }) {
   const remaining = tx.remainingAmount ?? tx.amount;
   const total = tx.amount;
@@ -271,13 +273,23 @@ const DebtRow = memo(function DebtRow({
   const isSettled = tx.status === 'settled' || remaining <= 0;
   const account = tx.accountId ? accountMap.get(tx.accountId) : undefined;
 
+  const handleCardClick = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('[data-debt-action]')) return;
+    onView(tx);
+  }, [tx, onView]);
+
+  const handleCardKey = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !(e.target as HTMLElement).closest('[data-debt-action]')) onView(tx);
+  }, [tx, onView]);
+
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => onView(tx)}
-      onKeyDown={(e) => e.key === 'Enter' && onView(tx)}
-      className="w-full bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.2)] card-press text-left cursor-pointer"
+      onClick={handleCardClick}
+      onKeyDown={handleCardKey}
+      className="w-full bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_8px_rgba(0,0,0,0.2)] text-left cursor-pointer"
+      style={{ touchAction: 'manipulation', opacity: settled ? 0.6 : undefined }}
     >
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -306,26 +318,22 @@ const DebtRow = memo(function DebtRow({
                 <p className="text-xs text-[#6B6B6B]">{formatDate(tx.date)}</p>
               </div>
             </div>
-            <div className="flex items-center flex-shrink-0">
+            <div className="flex items-center flex-shrink-0" data-debt-action>
               <span className="text-sm font-semibold mr-1"
                 style={{ color: tx.debtType === 'taken' ? '#34D399' : '#F87171' }}>
                 {tx.debtType === 'taken' ? '+' : '-'}{formatCurrency(total, currency)}
               </span>
               <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onPointerUp={(e) => e.stopPropagation()}
                 onClick={(e) => { e.stopPropagation(); onEdit(tx); }}
-                className="min-w-[40px] min-h-[40px] flex items-center justify-center text-[#6B6B6B] rounded-lg active:text-white"
+                className="relative z-10 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg active:text-white"
                 aria-label="Edit debt"
               >
                 <Pencil size={13} />
               </button>
               <button
-                onPointerDown={(e) => e.stopPropagation()}
-                onPointerUp={(e) => e.stopPropagation()}
                 onClick={(e) => { e.stopPropagation(); onDelete(tx); }}
                 disabled={deletingId === tx.id}
-                className="min-w-[40px] min-h-[40px] flex items-center justify-center text-[#6B6B6B] rounded-lg disabled:opacity-40 active:text-white"
+                className="relative z-10 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg disabled:opacity-40 active:text-white"
                 aria-label="Delete debt"
               >
                 <Trash2 size={13} />
@@ -391,6 +399,8 @@ function DeleteDebtConfirm({
         background: 'rgba(0,0,0,0.65)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
+        outline: 'none',
+        border: 'none',
       } as React.CSSProperties}
       onClick={onCancel}
     >
@@ -403,9 +413,14 @@ function DeleteDebtConfirm({
           borderRadius: '20px',
           boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
           overflow: 'hidden',
+          outline: 'none',
+          border: 'none',
         }}
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
+        onPointerMove={(e) => e.stopPropagation()}
+        onPointerUp={(e) => e.stopPropagation()}
+        onPointerCancel={(e) => e.stopPropagation()}
       >
         <div className="p-5 space-y-3">
           <div className="flex items-center gap-2.5">
@@ -794,9 +809,9 @@ export function History() {
                   {settledOpen && (
                     <div className="space-y-2">
                       {settledDebts.map((tx, i) => (
-                        <div key={tx.id} className="animate-fade-up opacity-60" style={{ animationDelay: `${Math.min(i * 40, 200)}ms` }}>
+                        <div key={tx.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i * 40, 200)}ms` }}>
                           <DebtRow tx={tx} accountMap={accountMap} currency={settings.currency} deletingId={deletingId}
-                            onView={setViewingDebt} onEdit={setEditingDebt} onDelete={handleDeleteTransaction} />
+                            onView={setViewingDebt} onEdit={setEditingDebt} onDelete={handleDeleteTransaction} settled />
                         </div>
                       ))}
                     </div>
