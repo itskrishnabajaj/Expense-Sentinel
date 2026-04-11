@@ -398,13 +398,19 @@ export function History() {
   const showTransferSection = filterType === 'all' || filterType === 'transfer';
 
   const handleDeleteTransaction = useCallback((tx: Transaction) => {
-    setConfirmDelete((prev) => prev ? prev : { type: tx.type, id: tx.id });
+    setConfirmDelete({ type: tx.type, id: tx.id });
   }, []);
 
   const confirmDeleteTx = useMemo(
     () => confirmDelete ? allItems.find((t) => t.id === confirmDelete.id) ?? null : null,
     [confirmDelete, allItems]
   );
+
+  useEffect(() => {
+    if (confirmDelete && !confirmDeleteTx) {
+      setConfirmDelete(null);
+    }
+  }, [confirmDelete, confirmDeleteTx]);
 
   const deletingRef = useRef(false);
 

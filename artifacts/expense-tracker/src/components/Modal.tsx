@@ -15,13 +15,22 @@ export function Modal({ onClose, children, maxWidth = 'max-w-sm' }: ModalProps) 
   const [closing, setClosing] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closingRef = useRef(false);
+  const closedRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  const fireClose = useCallback(() => {
+    if (closedRef.current) return;
+    closedRef.current = true;
+    onCloseRef.current();
+  }, []);
 
   const requestClose = useCallback(() => {
     if (closingRef.current) return;
     closingRef.current = true;
     setClosing(true);
-    timerRef.current = setTimeout(onClose, 180);
-  }, [onClose]);
+    timerRef.current = setTimeout(fireClose, 180);
+  }, [fireClose]);
 
   useEffect(() => {
     const main = document.querySelector('main') as HTMLElement | null;
@@ -37,8 +46,9 @@ export function Modal({ onClose, children, maxWidth = 'max-w-sm' }: ModalProps) 
       if (main) main.style.overflow = prevOverflow;
       if (timerRef.current) clearTimeout(timerRef.current);
       document.removeEventListener('keydown', handleEsc);
+      fireClose();
     };
-  }, [requestClose]);
+  }, [requestClose, fireClose]);
 
   const backdropTap = useTap(requestClose);
 
