@@ -495,7 +495,8 @@ export function History() {
 
       if (tx.history && tx.history.length > 0) {
         for (const payment of tx.history) {
-          const payAccId = payment.accountId ?? tx.accountId;
+          const payAccId = tx.isOld ? payment.accountId : (payment.accountId ?? tx.accountId);
+          if (!payAccId) continue;
           const paymentReverseDelta = tx.debtType === 'taken' ? payment.amount : -payment.amount;
           adjust(payAccId, paymentReverseDelta);
         }
