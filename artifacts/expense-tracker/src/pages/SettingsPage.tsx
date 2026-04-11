@@ -45,7 +45,7 @@ export function SettingsPage() {
   const [accountForm, setAccountForm] = useState<AccountFormData>({ name: '', type: 'cash' });
   const [accountNameError, setAccountNameError] = useState(false);
   const [accountDupError, setAccountDupError] = useState(false);
-  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState<Account | null>(null);
+  const [confirmDeleteAccountId, setConfirmDeleteAccountId] = useState<string | null>(null);
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
   const [accountDeleteError, setAccountDeleteError] = useState<string | null>(null);
 
@@ -156,16 +156,20 @@ export function SettingsPage() {
       );
       return;
     }
-    setConfirmDeleteAccount(acc);
+    setConfirmDeleteAccountId((prev) => prev ? prev : acc.id);
   };
 
+  const confirmDeleteAccount = confirmDeleteAccountId
+    ? accounts.find((a) => a.id === confirmDeleteAccountId) ?? null
+    : null;
+
   const handleConfirmDeleteAccount = async () => {
-    if (!confirmDeleteAccount) return;
-    setDeletingAccountId(confirmDeleteAccount.id);
+    if (!confirmDeleteAccountId) return;
+    setDeletingAccountId(confirmDeleteAccountId);
     try {
-      await deleteAccount(confirmDeleteAccount.id);
+      await deleteAccount(confirmDeleteAccountId);
     } finally {
-      setConfirmDeleteAccount(null);
+      setConfirmDeleteAccountId(null);
       setDeletingAccountId(null);
     }
   };
@@ -402,7 +406,7 @@ export function SettingsPage() {
               : undefined
           }
           confirming={!!deletingAccountId}
-          onCancel={() => setConfirmDeleteAccount(null)}
+          onCancel={() => setConfirmDeleteAccountId(null)}
           onConfirm={handleConfirmDeleteAccount}
         />
       )}

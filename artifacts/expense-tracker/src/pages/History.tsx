@@ -392,7 +392,7 @@ export function History() {
   const [editingDebt, setEditingDebt] = useState<Transaction | null>(null);
   const [viewingDebt, setViewingDebt] = useState<Transaction | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [confirmDeleteTx, setConfirmDeleteTx] = useState<Transaction | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [showFilter, setShowFilter] = useState(false);
   const [settledOpen, setSettledOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -466,11 +466,20 @@ export function History() {
   const showTransferSection = filterType === 'all' || filterType === 'transfer';
 
   const handleDeleteTransaction = useCallback((tx: Transaction) => {
-    setConfirmDeleteTx(tx);
+    setConfirmDeleteId((prev) => prev ? prev : tx.id);
   }, []);
 
-  const executeDelete = useCallback(async (tx: Transaction) => {
-    setConfirmDeleteTx(null);
+  const confirmDeleteTx = useMemo(
+    () => confirmDeleteId ? allItems.find((t) => t.id === confirmDeleteId) ?? null : null,
+    [confirmDeleteId, allItems]
+  );
+
+  const executeDeleteById = useCallback(async (txId: string) => {
+    setConfirmDeleteId(null);
+
+    const tx = allItems.find((t) => t.id === txId);
+    if (!tx) return;
+
     setDeletingId(tx.id);
 
     const balanceChanges: { accId: string; delta: number }[] = [];
@@ -562,7 +571,7 @@ export function History() {
     } finally {
       setDeletingId(null);
     }
-  }, [deleteExpense, deleteTransaction, updateAccount, accounts, expenses, settings.currency, pushUndo, refresh]);
+  }, [allItems, deleteExpense, deleteTransaction, updateAccount, accounts, expenses, settings.currency, pushUndo, refresh]);
 
   const handleEditTx = useCallback((tx: Transaction) => {
     if (tx.type === 'income') setEditingIncome(tx);
@@ -827,8 +836,8 @@ export function History() {
               : 'This will reverse all balance effects.'
           }
           confirming={deletingId === confirmDeleteTx.id}
-          onCancel={() => setConfirmDeleteTx(null)}
-          onConfirm={() => executeDelete(confirmDeleteTx)}
+          onCancel={() => setConfirmDeleteId(null)}
+          onConfirm={() => executeDeleteById(confirmDeleteTx.id)}
         />
       )}
 
