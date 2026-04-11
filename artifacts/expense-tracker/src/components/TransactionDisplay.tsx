@@ -71,6 +71,19 @@ export function getTxLabel(
   }
 }
 
+export function getTxTitle(tx: Transaction, categoryName?: string): string {
+  switch (tx.type) {
+    case 'income':
+      return tx.note || 'Income';
+    case 'expense':
+      return tx.note || categoryName || 'Expense';
+    case 'transfer':
+      return tx.note || 'Transfer';
+    case 'debt':
+      return tx.note || (tx.debtType === 'taken' ? 'Borrowed' : 'Lent');
+  }
+}
+
 export function TxAmount({ tx, currency }: { tx: Transaction; currency: string }) {
   switch (tx.type) {
     case 'income':

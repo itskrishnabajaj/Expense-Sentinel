@@ -9,7 +9,7 @@ import { EditIncomeModal } from '../components/EditIncomeModal';
 import { EditTransferModal } from '../components/EditTransferModal';
 import { EditDebtModal } from '../components/EditDebtModal';
 import { DebtDetailSheet } from '../components/DebtDetailSheet';
-import { TxIcon, getTxAmountInfo } from '../components/TransactionDisplay';
+import { TxIcon, getTxAmountInfo, getTxTitle } from '../components/TransactionDisplay';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { ACCOUNT_TYPE_ICONS } from '../utils/constants';
 import { Expense, Transaction, Category, getDB } from '../database';
@@ -51,18 +51,6 @@ function txSubLabel(tx: Transaction, accountMap: Map<string, { name: string; typ
   }
 }
 
-function txTitle(tx: Transaction, catName?: string) {
-  switch (tx.type) {
-    case 'income':
-      return tx.note || 'Income';
-    case 'expense':
-      return tx.note || catName || 'Expense';
-    case 'transfer':
-      return tx.note || 'Transfer';
-    case 'debt':
-      return tx.note || (tx.debtType === 'taken' ? 'Borrowed' : 'Lent');
-  }
-}
 
 const TxRow = memo(function TxRow({
   tx,
@@ -94,7 +82,7 @@ const TxRow = memo(function TxRow({
     <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
       <TxIcon tx={tx} categoryIcon={cat?.icon} categoryColor={cat?.color} size="md" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-white truncate">{txTitle(tx, cat?.name)}</p>
+        <p className="text-sm font-medium text-white truncate">{getTxTitle(tx, cat?.name)}</p>
         <p className="text-xs text-[#6B6B6B] mt-0.5 truncate">{txSubLabel(tx, accountMap, cat?.name)}</p>
       </div>
       <div className="flex items-center gap-0.5 flex-shrink-0">
