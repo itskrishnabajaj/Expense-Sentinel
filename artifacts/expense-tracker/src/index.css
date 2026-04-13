@@ -85,6 +85,12 @@
   height: 0;
 }
 
+/* ─── Modal max height with dvh progressive enhancement ──────────────── */
+.modal-max-height {
+  max-height: 85vh;
+  max-height: 85dvh;
+}
+
 /* ─── Native scroll feel ─────────────────────────────────────────────── */
 .scroll-native {
   overflow-y: auto;
