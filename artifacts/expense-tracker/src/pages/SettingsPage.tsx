@@ -255,13 +255,13 @@ export function SettingsPage() {
       <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)] animate-fade-up stagger-3">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-white">Accounts</h2>
-          <button
-            onClick={() => { setShowAddAccount(true); setAccountForm({ name: '', type: 'cash' }); setAccountNameError(false); setAccountDupError(false); }}
+          <TapButton
+            onTap={() => { setShowAddAccount(true); setAccountForm({ name: '', type: 'cash' }); setAccountNameError(false); setAccountDupError(false); }}
             className="flex items-center gap-1 text-xs text-indigo-400"
           >
             <Plus size={14} />
             Add
-          </button>
+          </TapButton>
         </div>
         {accounts.length === 0 ? (
           <p className="text-xs text-[#6B6B6B] text-center py-3">No accounts yet. Add one to track balances.</p>
@@ -277,22 +277,22 @@ export function SettingsPage() {
                   <p className="text-xs text-[#6B6B6B]">{formatCurrency(acc.balance, settings.currency)}</p>
                 </div>
                 <div className="flex items-center gap-0.5">
-                  <button
-                    onClick={() => openEditAccount(acc)}
+                  <TapButton
+                    onTap={() => openEditAccount(acc)}
                     className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg"
                   >
                     <Pencil size={14} />
-                  </button>
-                  <button
-                    onClick={() => handleRequestDeleteAccount(acc)}
-                    disabled={deletingAccountId === acc.id}
+                  </TapButton>
+                  <TapButton
+                    onTap={() => handleRequestDeleteAccount(acc)}
+                    disabled={deletingAccountId === acc.id || accounts.length <= 1}
                     className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-opacity ${
                       accounts.length <= 1 ? 'text-[#333333] cursor-not-allowed opacity-40' : 'text-[#6B6B6B]'
                     }`}
                     title={accounts.length <= 1 ? 'Cannot delete the last account' : 'Delete account'}
                   >
                     <Trash2 size={14} />
-                  </button>
+                  </TapButton>
                 </div>
               </div>
             ))}
@@ -301,7 +301,7 @@ export function SettingsPage() {
         {accountDeleteError && (
           <div className="mt-3 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl">
             <p className="text-xs text-red-400 leading-relaxed">{accountDeleteError}</p>
-            <button onClick={() => setAccountDeleteError(null)} className="text-xs text-[#6B6B6B] mt-1 underline">Dismiss</button>
+            <TapButton onTap={() => setAccountDeleteError(null)} className="text-xs text-[#6B6B6B] mt-1 underline">Dismiss</TapButton>
           </div>
         )}
       </div>
@@ -310,13 +310,13 @@ export function SettingsPage() {
       <div className="bg-[#1A1A1A] rounded-2xl p-4 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)] animate-fade-up stagger-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-white">Categories</h2>
-          <button
-            onClick={() => { setShowAddCategory(true); setCategoryForm({ name: '', icon: '💰', color: '#6366F1' }); setCategoryNameError(false); }}
+          <TapButton
+            onTap={() => { setShowAddCategory(true); setCategoryForm({ name: '', icon: '💰', color: '#6366F1' }); setCategoryNameError(false); }}
             className="flex items-center gap-1 text-xs text-indigo-400"
           >
             <Plus size={14} />
             Add
-          </button>
+          </TapButton>
         </div>
         <div className="space-y-1">
           {categories.map((cat) => (
@@ -324,19 +324,19 @@ export function SettingsPage() {
               <CategoryIcon icon={cat.icon} color={cat.color} size="sm" />
               <span className="flex-1 text-sm text-[#A0A0A0] truncate">{cat.name}</span>
               <div className="flex items-center gap-0.5">
-                <button
-                  onClick={() => openEditCategory(cat)}
+                <TapButton
+                  onTap={() => openEditCategory(cat)}
                   className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg"
                 >
                   <Pencil size={14} />
-                </button>
-                <button
-                  onClick={() => handleRequestDeleteCategory(cat)}
+                </TapButton>
+                <TapButton
+                  onTap={() => handleRequestDeleteCategory(cat)}
                   disabled={deletingCategoryId === cat.id}
                   className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg disabled:opacity-40"
                 >
                   <Trash2 size={14} />
-                </button>
+                </TapButton>
               </div>
             </div>
           ))}
@@ -344,15 +344,15 @@ export function SettingsPage() {
         {categoryDeleteError && (
           <div className="mt-3 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-xl">
             <p className="text-xs text-red-400 leading-relaxed">{categoryDeleteError}</p>
-            <button onClick={() => setCategoryDeleteError(null)} className="text-xs text-[#6B6B6B] mt-1 underline">Dismiss</button>
+            <TapButton onTap={() => setCategoryDeleteError(null)} className="text-xs text-[#6B6B6B] mt-1 underline">Dismiss</TapButton>
           </div>
         )}
       </div>
 
       {/* Data Actions */}
       <div className="bg-[#1A1A1A] rounded-2xl p-1 border border-white/5 shadow-[0_2px_12px_rgba(0,0,0,0.2)] animate-fade-up stagger-5">
-        <button
-          onClick={handleExport}
+        <TapButton
+          onTap={handleExport}
           className="w-full flex items-center gap-3 px-3 py-3.5 rounded-xl active:bg-white/5 transition-colors"
         >
           <div className="w-8 h-8 bg-indigo-500/10 rounded-lg flex items-center justify-center">
@@ -363,10 +363,10 @@ export function SettingsPage() {
             <p className="text-xs text-[#6B6B6B]">{expenses.length} expenses as CSV</p>
           </div>
           <ChevronRight size={15} className="text-[#6B6B6B]" />
-        </button>
+        </TapButton>
         <div className="h-px bg-white/5 mx-3" />
-        <button
-          onClick={handleUpdateApp}
+        <TapButton
+          onTap={handleUpdateApp}
           disabled={updating}
           className="w-full flex items-center gap-3 px-3 py-3.5 rounded-xl active:bg-white/5 transition-colors disabled:opacity-60"
         >
@@ -383,10 +383,10 @@ export function SettingsPage() {
             <p className="text-xs text-[#6B6B6B]">Migrate data to v{APP_VERSION}</p>
           </div>
           {!updating && !updateDone && <ChevronRight size={15} className="text-[#6B6B6B]" />}
-        </button>
+        </TapButton>
         <div className="h-px bg-white/5 mx-3" />
-        <button
-          onClick={() => setShowResetConfirm(true)}
+        <TapButton
+          onTap={() => setShowResetConfirm(true)}
           className="w-full flex items-center gap-3 px-3 py-3.5 rounded-xl active:bg-red-500/5 transition-colors"
         >
           <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center">
@@ -397,7 +397,7 @@ export function SettingsPage() {
             <p className="text-xs text-[#6B6B6B]">Permanently delete everything</p>
           </div>
           <ChevronRight size={15} className="text-[#6B6B6B]" />
-        </button>
+        </TapButton>
       </div>
 
       <div className="text-center py-4">

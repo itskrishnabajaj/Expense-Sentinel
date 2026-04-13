@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { TapButton } from '../components/TapButton';
 import {
   BarChart,
   Bar,
@@ -163,15 +164,15 @@ export function Insights() {
       {/* View Toggle */}
       <div className="flex bg-[#1A1A1A] rounded-xl p-1 border border-white/5 animate-fade-up stagger-3">
         {(['month', 'week', 'compare'] as View[]).map((v) => (
-          <button
+          <TapButton
             key={v}
-            onClick={() => setView(v)}
+            onTap={() => setView(v)}
             className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
               view === v ? 'bg-indigo-500 text-white shadow-sm' : 'text-[#6B6B6B]'
             }`}
           >
             {v === 'month' ? getMonthName(currentMonth) : v === 'week' ? 'This Week' : 'Compare'}
-          </button>
+          </TapButton>
         ))}
       </div>
 
@@ -278,7 +279,7 @@ export function Insights() {
       {view !== 'compare' && (
         <>
           {filteredExpenses.length === 0 && incomeTotal === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center min-h-[calc(100vh-380px)]">
+            <div className="flex flex-col items-center justify-center text-center" style={{ minHeight: 'calc(100dvh - 380px)' }}>
               <p className="text-4xl mb-4">📊</p>
               <h3 className="text-base font-semibold text-white mb-2">No data yet</h3>
               <p className="text-sm text-[#6B6B6B]">Add transactions to see your insights</p>

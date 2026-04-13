@@ -1,5 +1,6 @@
 import { memo, useState, useEffect } from 'react';
 import { Download, X } from 'lucide-react';
+import { TapButton } from './TapButton';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -49,18 +50,18 @@ export const InstallPrompt = memo(function InstallPrompt() {
           <p className="text-xs text-[#6B6B6B]">Add to home screen for quick access</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleInstall}
+          <TapButton
+            onTap={handleInstall}
             className="px-3 py-1.5 bg-indigo-500 active:bg-indigo-600 text-white text-xs font-medium rounded-lg transition-colors"
           >
             Install
-          </button>
-          <button
-            onClick={handleDismiss}
+          </TapButton>
+          <TapButton
+            onTap={handleDismiss}
             className="p-1.5 text-[#6B6B6B] active:text-white transition-colors"
           >
             <X size={14} />
-          </button>
+          </TapButton>
         </div>
       </div>
     </div>

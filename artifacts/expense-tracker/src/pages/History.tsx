@@ -562,9 +562,9 @@ export function History() {
     return (
       <div className="space-y-5">
         <div className="flex items-center gap-3">
-          <button onClick={() => setEditingExpense(null)} className="p-2 -ml-2 text-[#6B6B6B]">
+          <TapButton onTap={() => setEditingExpense(null)} className="p-2 -ml-2 text-[#6B6B6B]">
             <X size={20} />
-          </button>
+          </TapButton>
           <h1 className="text-lg font-bold text-white">Edit Expense</h1>
         </div>
         <AddExpense expense={editingExpense} onDone={() => setEditingExpense(null)} />
@@ -609,8 +609,8 @@ export function History() {
           <p className="text-xs text-[#6B6B6B] uppercase tracking-widest mb-1">Records</p>
           <h1 className="text-2xl font-bold text-white">History</h1>
         </div>
-        <button
-          onClick={() => setShowFilter(!showFilter)}
+        <TapButton
+          onTap={() => setShowFilter(!showFilter)}
           className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium transition-all ${
             filterType !== 'all'
               ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400'
@@ -619,7 +619,7 @@ export function History() {
         >
           <Filter size={14} />
           {filterType === 'all' ? 'Filter' : TYPE_FILTERS.find((f) => f.key === filterType)?.label || 'Filter'}
-        </button>
+        </TapButton>
       </div>
 
       <div className="relative animate-fade-up stagger-2">
@@ -633,9 +633,9 @@ export function History() {
           style={{ userSelect: 'text', touchAction: 'auto' }}
         />
         {searchQuery && (
-          <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5">
+          <TapButton onTap={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5">
             <X size={14} className="text-[#6B6B6B]" />
-          </button>
+          </TapButton>
         )}
       </div>
 
@@ -643,15 +643,15 @@ export function History() {
         <div className="bg-[#1A1A1A] rounded-2xl p-3 border border-white/5 animate-fade-up">
           <div className="flex flex-wrap gap-2">
             {TYPE_FILTERS.map(({ key, label }) => (
-              <button
+              <TapButton
                 key={key}
-                onClick={() => { setFilterType(key); setShowFilter(false); }}
+                onTap={() => { setFilterType(key); setShowFilter(false); }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                   filterType === key ? 'bg-indigo-500 text-white' : 'bg-white/5 text-[#A0A0A0]'
                 }`}
               >
                 {label}
-              </button>
+              </TapButton>
             ))}
           </div>
         </div>
@@ -671,7 +671,7 @@ export function History() {
       )}
 
       {!hasContent ? (
-        <div className="flex flex-col items-center justify-center text-center min-h-[calc(100vh-260px)]">
+        <div className="flex flex-col items-center justify-center text-center" style={{ minHeight: 'calc(100dvh - 260px)' }}>
           <p className="text-4xl mb-4">📭</p>
           <h3 className="text-base font-semibold text-white mb-2">
             {searchDebounced ? `No results for "${searchDebounced}"` : 'No transactions found'}
@@ -699,14 +699,14 @@ export function History() {
               </div>
               {settledDebts.length > 0 && (
                 <div className="mt-3">
-                  <button
-                    onClick={() => setSettledOpen((o) => !o)}
+                  <TapButton
+                    onTap={() => setSettledOpen((o) => !o)}
                     className="flex items-center gap-1.5 text-xs text-[#6B6B6B] mb-2 hover:text-[#A0A0A0] transition-colors"
                   >
                     <span className="transition-transform duration-200"
                       style={{ display: 'inline-block', transform: settledOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
                     {settledDebts.length} settled
-                  </button>
+                  </TapButton>
                   {settledOpen && (
                     <div className="space-y-2">
                       {settledDebts.map((tx, i) => (

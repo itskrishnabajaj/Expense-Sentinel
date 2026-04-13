@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useRef, ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Undo2 } from 'lucide-react';
+import { TapButton } from '../components/TapButton';
 
 interface UndoItem {
   id: string;
@@ -97,8 +98,8 @@ export function UndoProvider({ children }: { children: ReactNode }) {
           <span style={{ color: '#A0A0A0', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }}>
             {current.label}
           </span>
-          <button
-            onClick={() => handleUndo(current)}
+          <TapButton
+            onTap={() => handleUndo(current)}
             disabled={undoing === current.id}
             style={{
               display: 'flex',
@@ -118,9 +119,9 @@ export function UndoProvider({ children }: { children: ReactNode }) {
           >
             <Undo2 size={14} />
             {undoing === current.id ? 'Undoing…' : 'Undo'}
-          </button>
-          <button
-            onClick={() => dismiss(current.id)}
+          </TapButton>
+          <TapButton
+            onTap={() => dismiss(current.id)}
             style={{
               background: 'none',
               border: 'none',
@@ -133,7 +134,7 @@ export function UndoProvider({ children }: { children: ReactNode }) {
             aria-label="Dismiss"
           >
             ×
-          </button>
+          </TapButton>
         </div>,
         document.body
       )}

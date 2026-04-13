@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
+import { TapButton } from './TapButton';
 
 interface ConfirmDeleteModalProps {
   title: string;
@@ -40,20 +41,20 @@ function ConfirmDeleteContent({
         )}
       </div>
       <div className="flex border-t border-white/5">
-        <button
-          onClick={close}
+        <TapButton
+          onTap={close}
           className="flex-1 py-3.5 text-sm font-medium text-[#A0A0A0] active:bg-white/5 transition-colors"
         >
           Cancel
-        </button>
+        </TapButton>
         <div className="w-px bg-white/5" />
-        <button
-          onClick={onConfirm}
+        <TapButton
+          onTap={onConfirm}
           disabled={confirming}
           className="flex-1 py-3.5 text-sm font-semibold text-red-400 active:bg-red-500/10 transition-colors disabled:opacity-40"
         >
           {confirming ? confirmingLabel : confirmLabel}
-        </button>
+        </TapButton>
       </div>
     </>
   );

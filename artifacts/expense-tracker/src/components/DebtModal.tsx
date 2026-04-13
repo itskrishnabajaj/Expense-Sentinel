@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { X, ChevronDown, Check } from 'lucide-react';
 import { Modal, useModalClose } from './Modal';
 import { AccountSheet } from './AccountSheet';
@@ -22,6 +22,7 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showAccountSheet, setShowAccountSheet] = useState(false);
+  const savingRef = useRef(false);
 
   const selectedAccount = accounts.find((a) => a.id === accountId) ?? accounts[0];
   const displayAmount = formatAmountRaw(amount, symbol);
@@ -30,8 +31,10 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
   const handleNumKey = useNumpadInput(setAmount);
 
   const handleSave = useCallback(async () => {
+    if (savingRef.current) return;
     const parsed = parseFloat(amount);
     if (!parsed || parsed <= 0 || !accountId) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       if (!isOld) {
@@ -57,6 +60,7 @@ function DebtInner({ onCloseClean }: { onCloseClean: () => void }) {
       setTimeout(() => { onCloseClean(); }, 600);
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
   }, [amount, accountId, note, date, debtType, isOld, accounts, updateAccount, addTransaction, onCloseClean]);
 

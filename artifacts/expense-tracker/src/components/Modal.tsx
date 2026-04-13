@@ -82,6 +82,7 @@ export function Modal({ onClose, children, maxWidth = 'max-w-sm' }: ModalProps) 
           onPointerMove={(e) => e.stopPropagation()}
           onPointerUp={(e) => e.stopPropagation()}
           onPointerCancel={(e) => e.stopPropagation()}
+          onPointerLeave={(e) => e.stopPropagation()}
         >
           {children}
         </div>
