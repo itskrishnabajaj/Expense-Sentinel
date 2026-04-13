@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { useUndo } from '../context/UndoContext';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { GenericPageSkeleton } from '../components/Skeleton';
+import { TapButton } from '../components/TapButton';
 import { AddExpense } from './AddExpense';
 import { EditIncomeModal } from '../components/EditIncomeModal';
 import { EditTransferModal } from '../components/EditTransferModal';
@@ -90,31 +91,34 @@ const TxRow = memo(function TxRow({
           {amtInfo.label}
         </p>
         {isExpenseTx && originalExpense && (
-          <button
-            onClick={() => onEdit(originalExpense)}
+          <TapButton
+            onTap={() => onEdit(originalExpense)}
+            tapOptions={{ stopPropagation: true }}
             className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg flex-shrink-0"
             aria-label="Edit expense"
           >
             <Pencil size={14} />
-          </button>
+          </TapButton>
         )}
         {isEditable && (
-          <button
-            onClick={() => onEditTx(tx)}
+          <TapButton
+            onTap={() => onEditTx(tx)}
+            tapOptions={{ stopPropagation: true }}
             className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg flex-shrink-0"
             aria-label={`Edit ${tx.type}`}
           >
             <Pencil size={14} />
-          </button>
+          </TapButton>
         )}
-        <button
-          onClick={(e) => { e.stopPropagation(); onDelete(tx); }}
+        <TapButton
+          onTap={() => onDelete(tx)}
+          tapOptions={{ stopPropagation: true }}
           disabled={deletingId === tx.id}
           className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg flex-shrink-0 disabled:opacity-40"
           aria-label="Delete"
         >
           <Trash2 size={14} />
-        </button>
+        </TapButton>
       </div>
     </div>
   );
@@ -259,23 +263,25 @@ const DebtRow = memo(function DebtRow({
                 style={{ color: tx.debtType === 'taken' ? '#34D399' : '#F87171' }}>
                 {tx.debtType === 'taken' ? '+' : '-'}{formatCurrency(total, currency)}
               </span>
-              <button
+              <TapButton
                 data-debt-action
-                onClick={(e) => { e.stopPropagation(); onEdit(tx); }}
+                onTap={() => onEdit(tx)}
+                tapOptions={{ stopPropagation: true }}
                 className="relative z-10 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg active:text-white"
                 aria-label="Edit debt"
               >
                 <Pencil size={13} />
-              </button>
-              <button
+              </TapButton>
+              <TapButton
                 data-debt-action
-                onClick={(e) => { e.stopPropagation(); onDelete(tx); }}
+                onTap={() => onDelete(tx)}
+                tapOptions={{ stopPropagation: true }}
                 disabled={deletingId === tx.id}
                 className="relative z-10 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#6B6B6B] rounded-lg disabled:opacity-40 active:text-white"
                 aria-label="Delete debt"
               >
                 <Trash2 size={13} />
-              </button>
+              </TapButton>
             </div>
           </div>
           {!isSettled && (

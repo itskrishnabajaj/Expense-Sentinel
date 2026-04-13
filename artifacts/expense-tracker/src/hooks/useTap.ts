@@ -51,5 +51,10 @@ export function useTap(handler: () => void, options?: UseTapOptions) {
     movedRef.current = false;
   }, []);
 
-  return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel };
+  const onPointerLeave = useCallback(() => {
+    startRef.current = null;
+    movedRef.current = false;
+  }, []);
+
+  return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onPointerLeave };
 }

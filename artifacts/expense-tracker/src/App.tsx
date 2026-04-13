@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { UndoProvider } from './context/UndoContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -25,6 +26,22 @@ function DBErrorScreen() {
   );
 }
 
+function ScrollReset() {
+  const { pathname } = useLocation();
+  const mainRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!mainRef.current) {
+      mainRef.current = document.querySelector('main');
+    }
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+  }, [pathname]);
+
+  return null;
+}
+
 function AnimatedRoutes() {
   const { dbUnavailable } = useApp();
 
@@ -41,6 +58,7 @@ function AnimatedRoutes() {
   return (
     <div className="h-full bg-[#0D0D0D] text-white flex flex-col">
       <main className="flex-1 scroll-native safe-area-top">
+        <ScrollReset />
         <div className="max-w-lg mx-auto px-4 pt-8 md:min-h-full" style={{ paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0px))' }}>
           <Routes>
             <Route path="/" element={<Home />} />

@@ -73,7 +73,7 @@ export function Modal({ onClose, children, maxWidth = 'max-w-sm' }: ModalProps) 
             background: '#1C1C1E',
             borderRadius: '24px',
             boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
-            maxHeight: '85vh',
+            maxHeight: '85dvh',
             display: 'flex',
             flexDirection: 'column',
             outline: 'none',
