@@ -5,7 +5,6 @@ import { IncomeModal } from './IncomeModal';
 import { TransferModal } from './TransferModal';
 import { DebtModal } from './DebtModal';
 import { TapButton } from './TapButton';
-import { useTap } from '../hooks/useTap';
 
 type ModalType = 'income' | 'transfer' | 'debt' | null;
 
@@ -73,7 +72,6 @@ export function FAB() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
-  const overlayTap = useTap(() => setOpen(false));
 
   const hiddenPaths = ['/add', '/settings'];
   if (hiddenPaths.some((p) => location.pathname.startsWith(p))) return null;
@@ -109,7 +107,7 @@ export function FAB() {
             WebkitBackdropFilter: 'blur(2px)',
             animation: 'fade-overlay 0.18s ease both',
           }}
-          {...overlayTap}
+          onClick={() => setOpen(false)}
         />
       )}
 

@@ -1,6 +1,5 @@
 import { createContext, useContext, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useTap } from '../hooks/useTap';
 
 const ModalCloseCtx = createContext<() => void>(() => {});
 export const useModalClose = () => useContext(ModalCloseCtx);
@@ -42,8 +41,6 @@ export function Modal({ onClose, children, maxWidth = 'max-w-sm' }: ModalProps) 
     };
   }, [requestClose]);
 
-  const backdropTap = useTap(requestClose);
-
   return createPortal(
     <ModalCloseCtx.Provider value={requestClose}>
       <div
@@ -62,7 +59,7 @@ export function Modal({ onClose, children, maxWidth = 'max-w-sm' }: ModalProps) 
           outline: 'none',
           border: 'none',
         } as React.CSSProperties}
-        {...backdropTap}
+        onClick={requestClose}
       >
         <div
           className={`modal-max-height ${closing ? 'modal-card modal-card--out' : 'modal-card modal-card--in'}`}
@@ -78,11 +75,7 @@ export function Modal({ onClose, children, maxWidth = 'max-w-sm' }: ModalProps) 
             outline: 'none',
             border: 'none',
           }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onPointerMove={(e) => e.stopPropagation()}
-          onPointerUp={(e) => e.stopPropagation()}
-          onPointerCancel={(e) => e.stopPropagation()}
-          onPointerLeave={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
           {children}
         </div>

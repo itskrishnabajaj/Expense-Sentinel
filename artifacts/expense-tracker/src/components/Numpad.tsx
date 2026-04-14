@@ -49,7 +49,6 @@ export function Numpad({
         <TapButton
           key={key}
           onTap={() => onKey(key)}
-          tapOptions={{ preventDefault: true }}
           className={`${buttonHeight} ${bgColor} ${activeBgColor} ${rounded} flex items-center justify-center border border-white/5`}
         >
           {key === 'backspace' ? (

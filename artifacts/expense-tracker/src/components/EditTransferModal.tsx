@@ -150,7 +150,6 @@ function EditTransferInner({
             <TapButton
               key={key}
               onTap={() => handleNumKey(key)}
-              tapOptions={{ preventDefault: true }}
               className="h-12 bg-[#111111] active:bg-[#1E1E1E] rounded-xl flex items-center justify-center border border-white/5"
             >
               {key === 'backspace'
